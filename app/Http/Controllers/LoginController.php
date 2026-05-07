@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,6 +13,15 @@ class LoginController extends Controller
             'email'=>'email|required',
             'password'=>'required|string'
         ]);
+
+        $user=User::where('email', $credentials['email'])->first();
+
+        if(!$user){
+            return response()->json([
+                'status'=>'error',
+                'message'=>'User not found'
+            ]);
+        }
 
         if(Auth::attempt($credentials))
             {

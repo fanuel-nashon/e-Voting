@@ -9,6 +9,7 @@
             <div class="col-md-6 shadow-lg px-2 py-3">
                 <form id="loginForm" onsubmit="return checkLogin(event)">
                     @csrf
+                    <h4 class="mb-2 text-center">Students Organization e-Voting</h4>
                     <div class="mb-3">
                         <label class="form-label" for="email">Email</label>
                         <input class="form-control" type="email" name="email" id="email" placeholder="Enter valid email">
