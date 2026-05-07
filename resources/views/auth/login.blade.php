@@ -9,7 +9,8 @@
             <div class="col-md-6 shadow-lg px-2 py-3">
                 <form id="loginForm" onsubmit="return checkLogin(event)">
                     @csrf
-                    <h4 class="mb-2 text-center">Students Organization e-Voting</h4>
+                    <h4 class="mb-2 text-center"> e-Voting</h4>
+                    <p class="text-center">Student's Portal</p>
                     <div class="mb-3">
                         <label class="form-label" for="email">Email</label>
                         <input class="form-control" type="email" name="email" id="email" placeholder="Enter valid email">
@@ -18,7 +19,7 @@
                         <div class="d-flex justify-content-between">
                             <label class="form-label" for="password">Password</label>
                             <p class="text-danger">
-                                <a href="#">Forgot your password?</a>
+                                <a id="resetLink" href="#" onclick="return resetPassword(event)">Forgot your password?</a>
                             </p>
                         </div>
                         <input class="form-control" type="password" name="password" id="password" placeholder="Enter valid password">
@@ -71,6 +72,21 @@
 
 
         }
+
+        function resetPassword(){
+            event.preventDefault();
+
+            const link = document.getElementById('resetLink');
+            link.textContent = "Redirecting...";
+            window.location.href="{{ route('password.reset') }}"
+        }
+
+        window.addEventListener('pageshow', () => {
+            const link = document.getElementById('resetLink');
+            if(link) {
+                link.textContent = "Forgot your password?";
+            }
+        });
     </script>
 
 @endsection
