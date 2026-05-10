@@ -10,3 +10,7 @@ Route::view('dashboard', 'pages.dashboard')->name('dashboard');
 Route::post('login.submit',[LoginController::class, 'login'])->name('login.submit');
 
 Route::view('/password/reset', 'auth.reset-password')->name('password.reset');
+
+Route::post('/reset-password', [LoginController::class, 'resetPassword'])->name('reset.password');
+
+Route::view('/auth-token', 'auth.token')->name('token');
