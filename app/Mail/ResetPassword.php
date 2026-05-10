@@ -40,7 +40,7 @@ class ResetPassword extends Mailable
     {
         return new Content(
             view: 'emails.reset-password',
-            with: ['data=>$this->data']
+            with: ['data'=>$this->data]
         );
     }
 

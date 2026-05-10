@@ -17,40 +17,52 @@
                     <button id="btn" class="btn btn-primary" style="margin-left: 200px;">Get Token</button>
                     <div id="err" class="alert alert-danger mt-3 d-none"></div>
                 </form>
+                    <div id="success" class="alert alert-success mt-3 d-none"></div>
             </div>
         </div>
     </div>
 
     <script>
-        function sendToken(e){
+        function sendToken(e) {
             e.preventDefault();
 
             let form = document.getElementById('resetForm');
+            let btn = document.getElementById('btn');
             let formData = new FormData(form);
-            // let btn = document.getElementById('btn');
+            let successMsg = document.getElementById('success');
+            let errMsg = document.getElementById('err');
+
+            btn.disabled = true;
+            btn.textContent = "Sending...";
 
             fetch("{{ route('reset.password') }}", {
                 method: 'POST',
                 headers: {
-                    "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value
+                    "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value,
+                    "Accept": "application/json"
                 },
-                body:formData
+                body: formData
             })
-            .then(response=>response.json())
-            .then(data=>{
-                if(data.status==="success"){
-                    window.location.href="{{ route('token') }}";
-                }
-                else{
-                    let err = document.getElementById('err');
-                    err.textContent=data.message;
-                    err.classList.remove('d-none');
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    form.classList.add('d-none');
+                    successMsg.textContent = "Email sent successfully. Please check your inbox for the token.";
+                    successMsg.classList.remove('d-none');
+                    errMsg.classList.add('d-none');
+                } else {
+                    errMsg.textContent = data.message;
+                    errMsg.classList.remove('d-none');
+                    btn.disabled = false;
+                    btn.textContent = "Get Token";
                 }
             })
-            .catch(error=> {
-                console.log("Error:", error);
-                let err = document.getElementById('err');
-                err.classList.remove('d-none');
+            .catch(error => {
+                console.error("Error:", error);
+                errMsg.textContent = "Something went wrong. Please try again later.";
+                errMsg.classList.remove('d-none');
+                btn.disabled = false;
+                btn.textContent = "Get Token";
             });
 
             return false;

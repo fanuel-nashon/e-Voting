@@ -1,14 +1,25 @@
 @extends('layouts.app')
 
 @section('content')
-    <p>Hi {{$data->email}}</p>
+    <div style="font-family: sans-serif; line-height: 1.5;">
+        <p>Hi <strong>{{ $data->email }}</strong>,</p>
 
-    <p>Please find the token below to reset your password, If it is not you who requested this change please ignore</p>
+        <p>Please find the token below to reset your password. If you did not request this change, please ignore this email.</p>
 
-    <p>{{$data->token}}</p>
+        <div style="font-size: 24px; font-weight: bold; margin: 20px 0; color: #091c3d;">
+            {{ $data->token }}
+        </div>
 
-    <button class="btn btn-primary" onclick="window.location.href='{{ route('enterToken') }}'">
-        Reset Password
-    </button>
+        <p>Click the button below to enter your token and choose a new password:</p>
 
+        <a href="{{ route('enterToken') }}"
+           style="background-color: #f5951b;
+                  color: white;
+                  padding: 10px 20px;
+                  text-decoration: none;
+                  border-radius: 5px;
+                  display: inline-block;">
+            Reset Password
+        </a>
+    </div>
 @endsection

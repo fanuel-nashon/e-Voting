@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class LoginController extends Controller
@@ -41,35 +43,99 @@ class LoginController extends Controller
     }
 
     public function resetPassword(Request $request){
-        $validated=$request->validate([
-            'email'=>'email|required',
-        ]);
+        // dd('here');
+        try{
+            $validated=$request->validate([
+                'email'=>'email|required',
+            ]);
 
-        $user = User::where('email', $validated['email'])->first();
+            $user = User::where('email', $validated['email'])->first();
 
-        if(!$user){
+            if(!$user){
+                return response()->json([
+                    'status'=>'error',
+                    'message'=>'Email not found',
+                ]);
+            }
+
+            $token = rand(100000, 999999);
+
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email'=>$validated['email']],
+                ['token'=>$token, 'created_at'=>now()]
+            );
+
+            $data = (object)[
+                'email'=>$validated['email'],
+                'token'=>$token
+            ];
+
+            Mail::to($validated['email'])->send(new ResetPassword($data));
+            return response()->json([
+                'status'=>'success',
+                'message'=>'Check your email',
+            ]);
+        }
+        catch(\Exception $e){
+            Log::error('Password reset error: '.$e->getMessage());
             return response()->json([
                 'status'=>'error',
-                'message'=>'Email not found',
+                'message'=>$e->getMessage(),
             ]);
         }
 
-        $token = rand(100000, 999999);
+    }
 
-        DB::table('password_reset_tokens')->updateOrInsert(
-            ['email'=>$validated['email']],
-            ['token'=>$token, 'created_at'=>now()]
-        );
+    public function changePassword(Request $request)
+    {
+        if (!$request->password) {
+            $request->validate([
+                'token' => 'required|string'
+            ]);
 
-        $data = (object)[
-            'email'=>$validated['email'],
-            'token'=>$token
-        ];
+            $tokenRecord = DB::table('password_reset_tokens')
+                ->where('token', $request->token)
+                ->first();
 
-        Mail::to($validated['email'])->send(new ResetPassword($data));
+            if (!$tokenRecord) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid or expired token'
+                ]);
+            }
+
+            return response()->json([
+                'status' => 'token_valid'
+            ]);
+        }
+
+        $request->validate([
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        $tokenRecord = DB::table('password_reset_tokens')
+            ->where('token', $request->token)
+            ->first();
+
+        if (!$tokenRecord) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid or expired token'
+            ]);
+        }
+
+        User::where('email', $tokenRecord->email)
+            ->update([
+                'password' => Hash::make($request->password)
+            ]);
+
+        DB::table('password_reset_tokens')
+            ->where('token', $request->token)
+            ->delete();
+
         return response()->json([
-            'status'=>'success',
-            'message'=>'Check your email',
+            'status' => 'password_reset',
+            'message' => 'Password successfully updated'
         ]);
     }
 }
