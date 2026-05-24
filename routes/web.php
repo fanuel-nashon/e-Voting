@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\FacultyController;
 use App\Http\Controllers\LoginController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,3 +19,7 @@ Route::view('/auth-token', 'auth.token')->name('token');
 Route::view('/enter-token', 'auth.enter-token')->name('enterToken');
 
 Route::post('/change-password', [LoginController::class, 'changePassword'])->name('change.password');
+
+Route::middleware(['check.permission'])->group(function() {
+    Route::resource('faculties', FacultyController::class);
+});
