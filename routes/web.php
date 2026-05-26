@@ -20,6 +20,8 @@ Route::view('/enter-token', 'auth.enter-token')->name('enterToken');
 
 Route::post('/change-password', [LoginController::class, 'changePassword'])->name('change.password');
 
+Route::resource('faculties', FacultyController::class);
+
+
 Route::middleware(['check.permission'])->group(function() {
-    Route::resource('faculties', FacultyController::class);
 });
