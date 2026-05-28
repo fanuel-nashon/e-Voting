@@ -70,7 +70,18 @@ class FacultyController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $faculty = Faculty::findOrFail($id);
+        $faculty->update(['name' => $request->name]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Faculty updated successfully',
+            'faculty' => $faculty
+        ]);
     }
 
     /**
@@ -78,6 +89,12 @@ class FacultyController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $faculty = Faculty::findOrFail($id);
+        $faculty->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Faculty deleted successfully'
+        ]);
     }
 }

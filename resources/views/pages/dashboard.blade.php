@@ -140,6 +140,7 @@
                                     <tr>
                                         <th scope="col" class="py-3 px-4" style="width: 100px;">S/No</th>
                                         <th scope="col" class="py-3 px-4">Faculty Name</th>
+                                        <th scope="col" class="py-3 px-4" style="width: 160px;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="facultyTbody">
@@ -150,6 +151,32 @@
                     </div>
                 </div>
                 {{-- @endcan --}}
+
+                <!-- Edit Faculty Modal -->
+                <div class="modal fade" id="editFacultyModal" tabindex="-1" aria-labelledby="editFacultyModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content rounded-4 border-0 shadow">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold" id="editFacultyModalLabel" style="color: #091c3d;">Edit Faculty</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            </div>
+                            <div class="modal-body pt-2">
+                                <form id="editFacultyForm" onsubmit="updateFaculty(event)">
+                                    <input type="hidden" id="editFacultyId">
+                                    <div class="mb-3">
+                                        <label for="editFacultyName" class="form-label fw-semibold text-dark">Faculty Name</label>
+                                        <input type="text" class="form-control" id="editFacultyName" required>
+                                    </div>
+                                    <p class="text text-danger mb-3 d-none" id="editFacultyErr"></p>
+                                    <div class="d-flex justify-content-end" style="gap: 0.5rem;">
+                                        <button type="button" class="btn btn-secondary rounded-3" data-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn text-white px-4 rounded-3" style="background-color: #f5951b;">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
             </div>
         </main>
@@ -196,11 +223,113 @@
     function appendFacultyRow(id, name, index) {
         const tbody = document.getElementById('facultyTbody');
         const newRow = document.createElement('tr');
+        newRow.setAttribute('data-id', id);
         newRow.innerHTML = `
             <td class="px-4 fw-semibold text-secondary">${index}</td>
-            <td class="px-4 text-dark fw-medium">${name}</td>
+            <td class="px-4 text-dark fw-medium" data-name="${escapeAttr(name)}">${escapeHtml(name)}</td>
+            <td class="px-4">
+                <button class="btn btn-sm btn-outline-primary me-2 rounded-3" onclick="openEditModal(${id}, this.closest('tr'))">
+                    <i class="bi bi-pencil-fill me-1"></i>Edit
+                </button>
+                <button class="btn btn-sm btn-outline-danger rounded-3" onclick="deleteFaculty(${id}, this.closest('tr'))">
+                    <i class="bi bi-trash-fill me-1"></i>Delete
+                </button>
+            </td>
         `;
         tbody.appendChild(newRow);
+    }
+
+    function escapeHtml(str) {
+        const d = document.createElement('div');
+        d.appendChild(document.createTextNode(str));
+        return d.innerHTML;
+    }
+
+    function escapeAttr(str) {
+        return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function openEditModal(id, row) {
+        const name = row.querySelector('[data-name]').getAttribute('data-name');
+        document.getElementById('editFacultyId').value = id;
+        document.getElementById('editFacultyName').value = name;
+        document.getElementById('editFacultyErr').classList.add('d-none');
+        $('#editFacultyModal').modal('show');
+    }
+
+    function updateFaculty(event) {
+        event.preventDefault();
+        const id = document.getElementById('editFacultyId').value;
+        const name = document.getElementById('editFacultyName').value;
+        const errElem = document.getElementById('editFacultyErr');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        fetch(`/faculties/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify({ name })
+        })
+        .then(async response => {
+            const isJson = response.headers.get('content-type')?.includes('application/json');
+            const data = isJson ? await response.json() : null;
+            if (!response.ok) {
+                if (response.status === 422 && data?.errors?.name) throw new Error(data.errors.name[0]);
+                throw new Error(data?.message || `Error (${response.status})`);
+            }
+            return data;
+        })
+        .then(data => {
+            if (data && data.success) {
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                if (row) {
+                    const nameCell = row.querySelector('[data-name]');
+                    nameCell.setAttribute('data-name', escapeAttr(data.faculty.name));
+                    nameCell.textContent = data.faculty.name;
+                }
+                $('#editFacultyModal').modal('hide');
+            } else {
+                errElem.textContent = 'An unexpected error occurred.';
+                errElem.classList.remove('d-none');
+            }
+        })
+        .catch(err => {
+            errElem.textContent = err.message;
+            errElem.classList.remove('d-none');
+        });
+    }
+
+    function deleteFaculty(id, row) {
+        if (!confirm('Are you sure you want to delete this faculty?')) return;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        fetch(`/faculties/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken
+            }
+        })
+        .then(async response => {
+            const isJson = response.headers.get('content-type')?.includes('application/json');
+            const data = isJson ? await response.json() : null;
+            if (!response.ok) throw new Error(data?.message || `Error (${response.status})`);
+            return data;
+        })
+        .then(data => {
+            if (data && data.success) {
+                row.remove();
+                document.querySelectorAll('#facultyTbody tr').forEach((r, i) => {
+                    r.cells[0].textContent = i + 1;
+                });
+            }
+        })
+        .catch(err => alert('Delete failed: ' + err.message));
     }
 
     function loadFaculties() {
