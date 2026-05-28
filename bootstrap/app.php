@@ -13,8 +13,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'check.permission'=> SpatiePermissionMiddleware::class,
+            'check.permission' => SpatiePermissionMiddleware::class,
         ]);
+
+        // Redirect already-authenticated users away from guest pages
+        $middleware->redirectGuestsTo(fn () => route('login'));
+        $middleware->redirectUsersTo(fn () => route('dashboard'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

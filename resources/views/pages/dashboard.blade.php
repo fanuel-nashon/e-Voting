@@ -19,7 +19,8 @@
 
             <ul class="nav flex-column gap-2 w-100">
                 <li class="nav-item">
-                    <a href="#" class="nav-link text-white d-flex align-items-center px-3 py-2.5 rounded-3 hover-link">
+                    <a href="{{ route('dashboard') }}" id="dashboardLink"
+                       class="nav-link text-white d-flex align-items-center px-3 py-2.5 rounded-3 active-link">
                         <i class="bi bi-speedometer2 me-3 fs-5"></i> Dashboard
                     </a>
                 </li>
@@ -29,12 +30,16 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link text-white d-flex align-items-center px-3 py-2.5 rounded-3 active-link" id="facultySectionLink" onclick="facultySectionDisplay()">
+                    <a href="javascript:void(0)" id="facultySectionLink"
+                       class="nav-link text-white d-flex align-items-center px-3 py-2.5 rounded-3 hover-link"
+                       onclick="facultySectionDisplay()">
                         <i class="bi bi-building me-3 fs-5"></i> Faculties
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link text-white d-flex align-items-center px-3 py-2.5 rounded-3 hover-link">
+                    <a href="javascript:void(0)" id="candidatesSectionLink"
+                       class="nav-link text-white d-flex align-items-center px-3 py-2.5 rounded-3 hover-link"
+                       onclick="candidateSectionDisplay()">
                         <i class="bi bi-person-badge me-3 fs-5"></i> Candidates
                     </a>
                 </li>
@@ -48,7 +53,7 @@
 
         <div class="w-100 pb-2">
             <hr class="opacity-25">
-            <form action="#" method="POST" class="d-inline w-100">
+            <form action="{{ route('logout') }}" method="POST" class="d-inline w-100">
                 @csrf
                 <button type="submit" class="btn btn-link text-white text-decoration-none d-flex align-items-center px-3 py-2 w-100 rounded-3 hover-logout">
                     <i class="bi bi-box-arrow-left me-3 fs-5 text-danger"></i> Sign Out
@@ -152,6 +157,39 @@
                 </div>
                 {{-- @endcan --}}
 
+                <!-- Candidates Overview (read-only, hidden until sidebar link clicked) -->
+                <div class="col-12 mt-5 d-none" id="candidatesSection">
+                    <div class="card border-0 shadow-sm rounded-4 p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4 class="fw-bold m-0" style="color: #091c3d;">Candidates Overview</h4>
+                            <a href="{{ route('candidates.index') }}" class="btn text-white rounded-3 px-4"
+                               style="background-color: #091c3d;">
+                                <i class="bi bi-pencil-square me-2"></i>Manage Candidates
+                            </a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle border-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="py-3 px-4" style="width: 60px;">#</th>
+                                        <th class="py-3 px-4" style="width: 65px;">Photo</th>
+                                        <th class="py-3 px-4">Name</th>
+                                        <th class="py-3 px-4">Position</th>
+                                        <th class="py-3 px-4">Faculty / Program</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboardCandidatesTbody">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">
+                                            <i class="bi bi-arrow-repeat me-1"></i>Loading...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Edit Faculty Modal -->
                 <div class="modal fade" id="editFacultyModal" tabindex="-1" aria-labelledby="editFacultyModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
@@ -205,13 +243,19 @@
 
 <script>
     function facultySectionDisplay() {
-        const section = document.getElementById('facultySection');
-        if (section.classList.contains('d-none')) {
-            section.classList.remove('d-none');
-            loadFaculties();
-        } else {
-            section.classList.add('d-none');
-        }
+        const section      = document.getElementById('facultySection');
+        const facultyLink  = document.getElementById('facultySectionLink');
+        const dashLink     = document.getElementById('dashboardLink');
+        const isHidden     = section.classList.contains('d-none');
+
+        section.classList.toggle('d-none', !isHidden);
+
+        facultyLink.classList.toggle('active-link', isHidden);
+        facultyLink.classList.toggle('hover-link', !isHidden);
+        dashLink.classList.toggle('active-link', !isHidden);
+        dashLink.classList.toggle('hover-link', isHidden);
+
+        if (isHidden) loadFaculties();
     }
 
     function toggleFacultyForm() {
@@ -411,5 +455,82 @@
 
     toggleFacultyForm();
     loadFaculties();
+
+    // ─── Candidates overview (read-only) ──────────────────────────────────
+    const DASH_POSITION_LABELS = {
+        president: 'President', faculty_rep: 'Faculty Representative',
+        senator: 'Senator', class_rep: 'Class Representative',
+    };
+    const DASH_BADGE_STYLES = {
+        president:   'background:#0d6efd;color:#fff;',
+        faculty_rep: 'background:#198754;color:#fff;',
+        senator:     'background:#fd7e14;color:#fff;',
+        class_rep:   'background:#0dcaf0;color:#fff;',
+    };
+
+    function loadDashboardCandidates() {
+        fetch("{{ route('candidates.index') }}", {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('dashboardCandidatesTbody');
+            tbody.innerHTML = '';
+            if (!data.success || !data.candidates.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No candidates registered yet.</td></tr>';
+                return;
+            }
+            const storageBase = '{{ asset("storage") }}';
+            data.candidates.forEach((c, i) => {
+                const type  = c.position?.type || '';
+                const label = DASH_POSITION_LABELS[type] || type;
+                const badge = DASH_BADGE_STYLES[type] || '';
+                let affil = '—';
+                if (c.position?.faculty)  affil = c.position.faculty.name;
+                else if (c.position?.program) affil = c.position.program.name;
+
+                const avatar = c.image
+                    ? `<img src="${storageBase}/${c.image}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #e9ecef;" onerror="this.style.display='none'">`
+                    : `<div style="width:40px;height:40px;border-radius:50%;background:#e9ecef;display:inline-flex;align-items:center;justify-content:center;"><i class="bi bi-person-fill text-secondary"></i></div>`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-4 fw-semibold text-secondary">${i + 1}</td>
+                    <td class="px-4">${avatar}</td>
+                    <td class="px-4 fw-medium text-dark">${c.name}</td>
+                    <td class="px-4"><span class="badge rounded-pill px-3 py-1" style="${badge}font-size:0.78rem;">${label}</span></td>
+                    <td class="px-4 text-muted small">${affil}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(() => {
+            document.getElementById('dashboardCandidatesTbody').innerHTML =
+                '<tr><td colspan="5" class="text-center text-muted py-4">Could not load candidates.</td></tr>';
+        });
+    }
+
+    function candidateSectionDisplay() {
+        const section       = document.getElementById('candidatesSection');
+        const candidateLink = document.getElementById('candidatesSectionLink');
+        const dashLink      = document.getElementById('dashboardLink');
+        const isHidden      = section.classList.contains('d-none');
+
+        section.classList.toggle('d-none', !isHidden);
+
+        candidateLink.classList.toggle('active-link', isHidden);
+        candidateLink.classList.toggle('hover-link', !isHidden);
+        dashLink.classList.toggle('active-link', !isHidden);
+        dashLink.classList.toggle('hover-link', isHidden);
+
+        if (isHidden) loadDashboardCandidates();
+    }
+
+    // Auto-open a section when arriving from another page via ?section= query param
+    (function () {
+        const section = new URLSearchParams(window.location.search).get('section');
+        if (section === 'faculties')   facultySectionDisplay();
+        if (section === 'candidates')  candidateSectionDisplay();
+    })();
 </script>
 @endsection
