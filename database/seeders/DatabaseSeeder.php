@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             PositionSeeder::class,
             StudentSeeder::class,   // creates voter users + student profiles
             CandidateSeeder::class,
+            UsersSeeder::class,     // creates admin user
         ]);
     }
 }
