@@ -4,7 +4,10 @@ use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\FacultyController;
 use App\Http\Controllers\Admin\ProgramController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AcceptanceController;
+use App\Http\Controllers\ElectionAdminController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\VoterController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,11 +29,31 @@ Route::middleware('guest')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Candidate acceptance — public (token-gated, no auth required)
+|--------------------------------------------------------------------------
+*/
+Route::get('/acceptance/{token}', [AcceptanceController::class, 'form'])->name('acceptance.form');
+Route::post('/acceptance/{token}', [AcceptanceController::class, 'submit'])->name('acceptance.submit');
+
+/*
+|--------------------------------------------------------------------------
 | Authenticated routes — any logged-in user
 |--------------------------------------------------------------------------
 */
 Route::middleware('check.permission')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Voter routes — voters only (have vote permission)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('check.permission:vote')->group(function () {
+    Route::get('/voter', [VoterController::class, 'dashboard'])->name('voter.dashboard');
+    Route::post('/voter/review', [VoterController::class, 'review'])->name('voter.review');
+    Route::post('/voter/confirm', [VoterController::class, 'confirm'])->name('voter.confirm');
+    Route::get('/voter/done', [VoterController::class, 'done'])->name('voter.done');
 });
 
 /*
@@ -44,6 +67,15 @@ Route::middleware('check.permission:manage_election')->group(function () {
     Route::resource('faculties', FacultyController::class);
     Route::resource('programs', ProgramController::class)->except(['create', 'edit', 'show']);
     Route::resource('candidates', CandidateController::class)->except(['create', 'edit', 'show']);
+
+    // Election control centre
+    Route::get('/election', [ElectionAdminController::class, 'dashboard'])->name('election.dashboard');
+    Route::post('/election/timeline', [ElectionAdminController::class, 'saveTimeline'])->name('election.timeline');
+    Route::get('/election/logs', [ElectionAdminController::class, 'pollLogs'])->name('election.logs');
+    Route::get('/election/stats', [ElectionAdminController::class, 'pollStats'])->name('election.stats');
+    Route::post('/election/release', [ElectionAdminController::class, 'releaseResults'])->name('election.release');
+    Route::post('/election/acceptances/{acceptance}/verify', [ElectionAdminController::class, 'verifyAcceptance'])->name('election.verify');
+    Route::post('/election/publish', [ElectionAdminController::class, 'publishResults'])->name('election.publish');
 });
 
 /*
@@ -55,13 +87,4 @@ Route::middleware('check.permission:manage_users')->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-});
-
-/*
-|--------------------------------------------------------------------------
-| Voting — voters only (have vote)
-|--------------------------------------------------------------------------
-*/
-Route::middleware('check.permission:vote')->group(function () {
-    // voting routes go here
 });
