@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\FacultyController;
+use App\Http\Controllers\Admin\ProgramController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\LoginController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +42,7 @@ Route::middleware('check.permission:manage_election')->group(function () {
     Route::view('/dashboard', 'pages.dashboard')->name('dashboard');
 
     Route::resource('faculties', FacultyController::class);
+    Route::resource('programs', ProgramController::class)->except(['create', 'edit', 'show']);
     Route::resource('candidates', CandidateController::class)->except(['create', 'edit', 'show']);
 });
 
@@ -49,7 +52,9 @@ Route::middleware('check.permission:manage_election')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware('check.permission:manage_users')->group(function () {
-    // user management routes go here
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
 
 /*

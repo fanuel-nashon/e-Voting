@@ -25,7 +25,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link text-white d-flex align-items-center px-3 py-2.5 rounded-3 hover-link">
+                    <a href="{{ route('users.index') }}" class="nav-link text-white d-flex align-items-center px-3 py-2.5 rounded-3 hover-link">
                         <i class="bi bi-people me-3 fs-5"></i> Users / Voters
                     </a>
                 </li>
@@ -34,6 +34,13 @@
                        class="nav-link text-white d-flex align-items-center px-3 py-2.5 rounded-3 hover-link"
                        onclick="facultySectionDisplay()">
                         <i class="bi bi-building me-3 fs-5"></i> Faculties
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="javascript:void(0)" id="programsSectionLink"
+                       class="nav-link text-white d-flex align-items-center px-3 py-2.5 rounded-3 hover-link"
+                       onclick="programSectionDisplay()">
+                        <i class="bi bi-journal-bookmark me-3 fs-5"></i> Programs
                     </a>
                 </li>
                 <li class="nav-item">
@@ -156,6 +163,84 @@
                     </div>
                 </div>
                 {{-- @endcan --}}
+
+                <!-- Programs Management Section -->
+                <div class="col-12 mt-5 d-none" id="programsSection">
+                    <div class="card border-0 shadow-sm rounded-4 p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4 class="fw-bold m-0" style="color: #091c3d;">Registered Programs</h4>
+                            <button class="btn text-white rounded-3 px-4" style="background-color: #091c3d;" id="toggleProgramBtn">
+                                <i class="bi bi-plus-lg me-2"></i>Create New Program
+                            </button>
+                        </div>
+
+                        <!-- Add Program Form -->
+                        <form class="d-none border p-4 rounded-3 mb-4 bg-light shadow-sm" id="createProgramForm" onsubmit="createProgram(event)">
+                            @csrf
+                            <div class="mb-3">
+                                <label for="programName" class="form-label fw-semibold text-dark">Program Name</label>
+                                <input type="text" class="form-control" id="programName" name="name" required placeholder="e.g., Bachelor of Science in Computer Science">
+                            </div>
+                            <div class="mb-3">
+                                <label for="programFacultyId" class="form-label fw-semibold text-dark">Faculty <span class="text-muted fw-normal">(optional)</span></label>
+                                <select class="form-select" id="programFacultyId" name="faculty_id">
+                                    <option value="">— None —</option>
+                                </select>
+                            </div>
+                            <p class="text text-danger mb-3 d-none" id="createProgramErr"></p>
+                            <button type="submit" class="btn text-white px-4" style="background-color: #f5951b;">Save Program</button>
+                        </form>
+
+                        <!-- Dynamic Table -->
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle border-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" class="py-3 px-4" style="width: 100px;">S/No</th>
+                                        <th scope="col" class="py-3 px-4">Program Name</th>
+                                        <th scope="col" class="py-3 px-4">Faculty</th>
+                                        <th scope="col" class="py-3 px-4" style="width: 160px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="programsTbody">
+                                    <!-- Rendered dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Program Modal -->
+                <div class="modal fade" id="editProgramModal" tabindex="-1" aria-labelledby="editProgramModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content rounded-4 border-0 shadow">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold" id="editProgramModalLabel" style="color: #091c3d;">Edit Program</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            </div>
+                            <div class="modal-body pt-2">
+                                <form id="editProgramForm" onsubmit="updateProgram(event)">
+                                    <input type="hidden" id="editProgramId">
+                                    <div class="mb-3">
+                                        <label for="editProgramName" class="form-label fw-semibold text-dark">Program Name</label>
+                                        <input type="text" class="form-control" id="editProgramName" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="editProgramFacultyId" class="form-label fw-semibold text-dark">Faculty <span class="text-muted fw-normal">(optional)</span></label>
+                                        <select class="form-select" id="editProgramFacultyId">
+                                            <option value="">— None —</option>
+                                        </select>
+                                    </div>
+                                    <p class="text text-danger mb-3 d-none" id="editProgramErr"></p>
+                                    <div class="d-flex justify-content-end" style="gap: 0.5rem;">
+                                        <button type="button" class="btn btn-secondary rounded-3" data-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn text-white px-4 rounded-3" style="background-color: #f5951b;">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Candidates Overview (read-only, hidden until sidebar link clicked) -->
                 <div class="col-12 mt-5 d-none" id="candidatesSection">
@@ -526,11 +611,231 @@
         if (isHidden) loadDashboardCandidates();
     }
 
+    // ─── Programs ─────────────────────────────────────────────────────────────
+
+    function programSectionDisplay() {
+        const section      = document.getElementById('programsSection');
+        const programLink  = document.getElementById('programsSectionLink');
+        const dashLink     = document.getElementById('dashboardLink');
+        const isHidden     = section.classList.contains('d-none');
+
+        section.classList.toggle('d-none', !isHidden);
+
+        programLink.classList.toggle('active-link', isHidden);
+        programLink.classList.toggle('hover-link', !isHidden);
+        dashLink.classList.toggle('active-link', !isHidden);
+        dashLink.classList.toggle('hover-link', isHidden);
+
+        if (isHidden) {
+            loadFacultiesIntoSelect('programFacultyId');
+            loadPrograms();
+        }
+    }
+
+    document.getElementById('toggleProgramBtn').addEventListener('click', function () {
+        document.getElementById('createProgramForm').classList.toggle('d-none');
+    });
+
+    function loadFacultiesIntoSelect(selectId) {
+        fetch("{{ route('faculties.index') }}", {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            [selectId, 'editProgramFacultyId'].forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                const current = sel.value;
+                sel.innerHTML = '<option value="">— None —</option>';
+                data.faculties.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f.id;
+                    opt.textContent = f.name;
+                    if (String(f.id) === String(current)) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            });
+        })
+        .catch(() => {});
+    }
+
+    function appendProgramRow(id, name, facultyName, index) {
+        const tbody = document.getElementById('programsTbody');
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-id', id);
+        tr.innerHTML = `
+            <td class="px-4 fw-semibold text-secondary">${index}</td>
+            <td class="px-4 text-dark fw-medium" data-name="${escapeAttr(name)}">${escapeHtml(name)}</td>
+            <td class="px-4 text-muted" data-faculty="${escapeAttr(facultyName)}">${escapeHtml(facultyName)}</td>
+            <td class="px-4">
+                <button class="btn btn-sm btn-outline-primary me-2 rounded-3" onclick="openEditProgramModal(${id}, this.closest('tr'))">
+                    <i class="bi bi-pencil-fill me-1"></i>Edit
+                </button>
+                <button class="btn btn-sm btn-outline-danger rounded-3" onclick="deleteProgram(${id}, this.closest('tr'))">
+                    <i class="bi bi-trash-fill me-1"></i>Delete
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    function loadPrograms() {
+        fetch("{{ route('programs.index') }}", {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            const tbody = document.getElementById('programsTbody');
+            tbody.innerHTML = '';
+            data.programs.forEach((p, i) => {
+                appendProgramRow(p.id, p.name, p.faculty ? p.faculty.name : '—', i + 1);
+            });
+        })
+        .catch(err => console.error('Error loading programs:', err));
+    }
+
+    function createProgram(event) {
+        event.preventDefault();
+        const name      = document.getElementById('programName').value;
+        const facultyId = document.getElementById('programFacultyId').value;
+        const errElem   = document.getElementById('createProgramErr');
+        errElem.classList.add('d-none');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        fetch("{{ route('programs.store') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify({ name, faculty_id: facultyId || null }),
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+                if (response.status === 422 && data?.errors) {
+                    const first = Object.values(data.errors)[0];
+                    throw new Error(Array.isArray(first) ? first[0] : first);
+                }
+                throw new Error(data?.message || `Error (${response.status})`);
+            }
+            return data;
+        })
+        .then(data => {
+            if (data.success) {
+                const count = document.getElementById('programsTbody').children.length;
+                appendProgramRow(data.program.id, data.program.name, data.program.faculty ? data.program.faculty.name : '—', count + 1);
+                document.getElementById('createProgramForm').reset();
+                document.getElementById('createProgramForm').classList.add('d-none');
+            }
+        })
+        .catch(err => {
+            errElem.textContent = err.message;
+            errElem.classList.remove('d-none');
+        });
+    }
+
+    function openEditProgramModal(id, row) {
+        const name    = row.querySelector('[data-name]').getAttribute('data-name');
+        const faculty = row.querySelector('[data-faculty]').getAttribute('data-faculty');
+        document.getElementById('editProgramId').value = id;
+        document.getElementById('editProgramName').value = name;
+        document.getElementById('editProgramErr').classList.add('d-none');
+        loadFacultiesIntoSelect('editProgramFacultyId');
+        // pre-select after options load (next tick)
+        setTimeout(() => {
+            const sel = document.getElementById('editProgramFacultyId');
+            [...sel.options].forEach(o => { if (o.textContent === faculty) o.selected = true; });
+        }, 300);
+        $('#editProgramModal').modal('show');
+    }
+
+    function updateProgram(event) {
+        event.preventDefault();
+        const id        = document.getElementById('editProgramId').value;
+        const name      = document.getElementById('editProgramName').value;
+        const facultyId = document.getElementById('editProgramFacultyId').value;
+        const errElem   = document.getElementById('editProgramErr');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        fetch(`/programs/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify({ name, faculty_id: facultyId || null }),
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+                if (response.status === 422 && data?.errors) {
+                    const first = Object.values(data.errors)[0];
+                    throw new Error(Array.isArray(first) ? first[0] : first);
+                }
+                throw new Error(data?.message || `Error (${response.status})`);
+            }
+            return data;
+        })
+        .then(data => {
+            if (data.success) {
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                if (row) {
+                    row.querySelector('[data-name]').setAttribute('data-name', escapeAttr(data.program.name));
+                    row.querySelector('[data-name]').textContent = data.program.name;
+                    const facultyName = data.program.faculty ? data.program.faculty.name : '—';
+                    row.querySelector('[data-faculty]').setAttribute('data-faculty', escapeAttr(facultyName));
+                    row.querySelector('[data-faculty]').textContent = facultyName;
+                }
+                $('#editProgramModal').modal('hide');
+            }
+        })
+        .catch(err => {
+            errElem.textContent = err.message;
+            errElem.classList.remove('d-none');
+        });
+    }
+
+    function deleteProgram(id, row) {
+        if (!confirm('Are you sure you want to delete this program?')) return;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        fetch(`/programs/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) throw new Error(data?.message || `Error (${response.status})`);
+            return data;
+        })
+        .then(data => {
+            if (data.success) {
+                row.remove();
+                document.querySelectorAll('#programsTbody tr').forEach((r, i) => {
+                    r.cells[0].textContent = i + 1;
+                });
+            }
+        })
+        .catch(err => alert('Delete failed: ' + err.message));
+    }
+
     // Auto-open a section when arriving from another page via ?section= query param
     (function () {
         const section = new URLSearchParams(window.location.search).get('section');
         if (section === 'faculties')   facultySectionDisplay();
         if (section === 'candidates')  candidateSectionDisplay();
+        if (section === 'programs')    programSectionDisplay();
     })();
 </script>
 @endsection

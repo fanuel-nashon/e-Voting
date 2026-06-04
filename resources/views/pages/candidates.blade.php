@@ -24,7 +24,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link text-white d-flex align-items-center px-3 py-2 rounded-3 hover-link">
+                    <a href="{{ route('users.index') }}" class="nav-link text-white d-flex align-items-center px-3 py-2 rounded-3 hover-link">
                         <i class="bi bi-people me-3 fs-5"></i> Users / Voters
                     </a>
                 </li>
