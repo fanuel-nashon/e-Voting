@@ -10,11 +10,11 @@ class FacultySeeder extends Seeder
     public function run(): void
     {
         $faculties = [
-            'Faculty of Engineering & Technology',
-            'Faculty of Science',
-            'Faculty of Business & Economics',
-            'Faculty of Arts & Social Sciences',
-            'Faculty of Medicine & Health Sciences',
+            'Faculty of Science and Technology',
+            'Faculty of Social Sciences',
+            'School of Business',
+            'School of Law',
+            'School of Public Administration and Management',
         ];
 
         foreach ($faculties as $name) {

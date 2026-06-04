@@ -54,6 +54,11 @@
 
             <div id="loginError" class="login-error d-none"></div>
 
+            <p class="text-center small mb-3" style="color:rgba(255,255,255,.6);">
+              New student?
+              <a href="{{ route('voter.register') }}" style="color:#f5951b;font-weight:600;">Register to vote</a>
+            </p>
+
             <button id="loginBtn" type="submit" class="login-btn">
                 <span id="loginBtnText">
                     <i class="bi bi-box-arrow-in-right me-2"></i>Sign In

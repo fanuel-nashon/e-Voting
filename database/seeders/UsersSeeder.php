@@ -13,20 +13,34 @@ class UsersSeeder extends Seeder
      */
     public function run(): void
     {
-        $userData=[
-            'name'=>'admin',
-            'email'=>'admin@gmail.com',
-            'password'=>Hash::make('Password_123')
+        $accounts = [
+            [
+                'name'     => 'admin',
+                'email'    => 'admin@gmail.com',
+                'password' => Hash::make('Password_123'),
+                'role'     => 'admin',
+            ],
+            [
+                'name'     => 'Election Admin',
+                'email'    => 'electionadmin@gmail.com',
+                'password' => Hash::make('Password_123'),
+                'role'     => 'election_admin',
+            ],
         ];
 
-        $user = \App\Models\User::where('email', $userData['email'])->first();
-        if($user){
-            $user->update($userData);
-            $user->assignRole('admin');
-            $user->save();
-            return;
-        }
+        foreach ($accounts as $data) {
+            $role = $data['role'];
+            unset($data['role']);
 
-        \App\Models\User::firstOrCreate($userData);
+            $user = \App\Models\User::where('email', $data['email'])->first();
+
+            if ($user) {
+                $user->update($data);
+            } else {
+                $user = \App\Models\User::create($data);
+            }
+
+            $user->syncRoles([$role]);
+        }
     }
 }

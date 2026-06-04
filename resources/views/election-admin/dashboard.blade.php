@@ -155,6 +155,67 @@
           </div>
         </div>
 
+        <!-- Pending Voter Registrations -->
+        <div class="col-12">
+          <div class="card border-0 shadow-sm rounded-4 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h5 class="fw-bold mb-0" style="color:#091c3d;">
+                <i class="bi bi-person-plus me-2" style="color:#f5951b;"></i>
+                Pending Voter Registrations
+                <span class="badge rounded-pill ms-2" style="background:#dc3545;color:#fff;font-size:.75rem;" id="pendingCount">{{ $pendingRegistrations->count() }}</span>
+              </h5>
+              <button class="btn btn-sm btn-outline-secondary rounded-3" onclick="refreshRegistrations()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle border-0">
+                <thead class="table-light">
+                  <tr>
+                    <th class="py-3 px-4">Photo</th>
+                    <th class="py-3 px-4">Name</th>
+                    <th class="py-3 px-4">Reg Number</th>
+                    <th class="py-3 px-4">Programme</th>
+                    <th class="py-3 px-4">Faculty</th>
+                    <th class="py-3 px-4">Submitted</th>
+                    <th class="py-3 px-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="pendingRegTbody">
+                  @forelse($pendingRegistrations as $reg)
+                  <tr id="reg-row-{{ $reg->id }}">
+                    <td class="px-4">
+                      @if($reg->photo)
+                      <img src="{{ asset('storage/'.$reg->photo) }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #e9ecef;">
+                      @else
+                      <div style="width:40px;height:40px;border-radius:50%;background:#e9ecef;display:flex;align-items:center;justify-content:center;"><i class="bi bi-person-fill text-secondary"></i></div>
+                      @endif
+                    </td>
+                    <td class="px-4 fw-semibold text-dark">{{ $reg->name }}</td>
+                    <td class="px-4 text-muted small">{{ $reg->reg_number }}</td>
+                    <td class="px-4 small">{{ $reg->program->name }}</td>
+                    <td class="px-4 small text-muted">{{ $reg->faculty->name }}</td>
+                    <td class="px-4 small text-muted">{{ $reg->created_at->format('d M Y') }}</td>
+                    <td class="px-4">
+                      <button class="btn btn-sm btn-success rounded-3 me-1"
+                              onclick="approveReg({{ $reg->id }}, this)">
+                        <i class="bi bi-check-lg me-1"></i>Approve
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger rounded-3"
+                              onclick="rejectReg({{ $reg->id }}, this)">
+                        <i class="bi bi-x-lg me-1"></i>Reject
+                      </button>
+                    </td>
+                  </tr>
+                  @empty
+                  <tr id="noRegRow"><td colspan="7" class="text-center text-muted py-4">No pending registrations.</td></tr>
+                  @endforelse
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- Candidate acceptances -->
         @if($acceptances->isNotEmpty())
         <div class="col-12">
@@ -352,6 +413,67 @@ function verifyAcceptance(id, btn) {
     }
   });
 }
+
+// ── Voter registration approvals ──────────────────────────────────────────
+function approveReg(id, btn) {
+  if (!confirm('Approve this voter registration and send their login credentials?')) return;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+  fetch(`/voter-registrations/${id}/approve`, {
+    method: 'POST',
+    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF, 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById(`reg-row-${id}`).remove();
+      updatePendingCount(-1);
+      showAction(data.message, true);
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Approve';
+      alert(data.message);
+    }
+  });
+}
+
+function rejectReg(id, btn) {
+  const reason = prompt('Reason for rejection (optional):');
+  if (reason === null) return;
+  btn.disabled = true;
+
+  fetch(`/voter-registrations/${id}/reject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF, 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ reason })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById(`reg-row-${id}`).remove();
+      updatePendingCount(-1);
+      showAction(data.message, true);
+    } else {
+      btn.disabled = false;
+      alert(data.message);
+    }
+  });
+}
+
+function updatePendingCount(delta) {
+  const el = document.getElementById('pendingCount');
+  const n = Math.max(0, parseInt(el.textContent) + delta);
+  el.textContent = n;
+  if (n === 0) {
+    const tbody = document.getElementById('pendingRegTbody');
+    if (!tbody.querySelector('tr')) {
+      tbody.innerHTML = '<tr id="noRegRow"><td colspan="7" class="text-center text-muted py-4">No pending registrations.</td></tr>';
+    }
+  }
+}
+
+function refreshRegistrations() { location.reload(); }
 
 function showAction(msg, success = null) {
   const el = document.getElementById('actionMsg');

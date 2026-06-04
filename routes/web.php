@@ -1,18 +1,19 @@
 <?php
 
+use App\Http\Controllers\AcceptanceController;
 use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\FacultyController;
 use App\Http\Controllers\Admin\ProgramController;
 use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\AcceptanceController;
 use App\Http\Controllers\ElectionAdminController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\VoterController;
+use App\Http\Controllers\VoterRegistrationController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Guest routes — accessible only when NOT logged in
+| Guest routes
 |--------------------------------------------------------------------------
 */
 Route::middleware('guest')->group(function () {
@@ -25,11 +26,19 @@ Route::middleware('guest')->group(function () {
     Route::view('/auth-token', 'auth.token')->name('token');
     Route::view('/enter-token', 'auth.enter-token')->name('enterToken');
     Route::post('/change-password', [LoginController::class, 'changePassword'])->name('change.password');
+
+    // Voter self-registration
+    Route::get('/register/voter', [VoterRegistrationController::class, 'showForm'])->name('voter.register');
+    Route::post('/register/voter', [VoterRegistrationController::class, 'submit'])->name('voter.register.submit');
+
+    // OTP step (session-gated, not auth-gated)
+    Route::get('/voter/otp', [LoginController::class, 'otpForm'])->name('voter.otp');
+    Route::post('/voter/otp', [LoginController::class, 'verifyOtp'])->name('voter.otp.verify');
 });
 
 /*
 |--------------------------------------------------------------------------
-| Candidate acceptance — public (token-gated, no auth required)
+| Candidate acceptance — public token-gated
 |--------------------------------------------------------------------------
 */
 Route::get('/acceptance/{token}', [AcceptanceController::class, 'form'])->name('acceptance.form');
@@ -37,7 +46,7 @@ Route::post('/acceptance/{token}', [AcceptanceController::class, 'submit'])->nam
 
 /*
 |--------------------------------------------------------------------------
-| Authenticated routes — any logged-in user
+| Authenticated — any logged-in user
 |--------------------------------------------------------------------------
 */
 Route::middleware('check.permission')->group(function () {
@@ -46,7 +55,7 @@ Route::middleware('check.permission')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Voter routes — voters only (have vote permission)
+| Voter routes (vote permission)
 |--------------------------------------------------------------------------
 */
 Route::middleware('check.permission:vote')->group(function () {
@@ -58,7 +67,7 @@ Route::middleware('check.permission:vote')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Election management — admin + election_admin (have manage_election)
+| Election management (manage_election permission)
 |--------------------------------------------------------------------------
 */
 Route::middleware('check.permission:manage_election')->group(function () {
@@ -76,15 +85,21 @@ Route::middleware('check.permission:manage_election')->group(function () {
     Route::post('/election/release', [ElectionAdminController::class, 'releaseResults'])->name('election.release');
     Route::post('/election/acceptances/{acceptance}/verify', [ElectionAdminController::class, 'verifyAcceptance'])->name('election.verify');
     Route::post('/election/publish', [ElectionAdminController::class, 'publishResults'])->name('election.publish');
+
+    // Voter registration approvals
+    Route::get('/voter-registrations/pending', [VoterRegistrationController::class, 'pendingList'])->name('voter.registrations.pending');
+    Route::post('/voter-registrations/{registration}/approve', [VoterRegistrationController::class, 'approve'])->name('voter.registrations.approve');
+    Route::post('/voter-registrations/{registration}/reject', [VoterRegistrationController::class, 'reject'])->name('voter.registrations.reject');
 });
 
 /*
 |--------------------------------------------------------------------------
-| User management — admin only (has manage_users)
+| User management (manage_users permission)
 |--------------------------------------------------------------------------
 */
 Route::middleware('check.permission:manage_users')->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::patch('/users/{user}/faculty', [UserController::class, 'assignFaculty'])->name('users.assign-faculty');
 });

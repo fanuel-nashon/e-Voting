@@ -35,7 +35,8 @@ class StudentSeeder extends Seeder
                 $last  = $lastNames[array_rand($lastNames)];
                 $name  = "$first $last";
                 $regNo = 'STD/' . str_pad($counter, 4, '0', STR_PAD_LEFT) . '/2024';
-                $email = strtolower($first . '.' . $last . $counter) . '@students.university.ac.tz';
+                $regNoClean = 'std' . str_pad($counter, 4, '0', STR_PAD_LEFT);
+                $email = $regNoClean . '@students.university.ac.tz';
 
                 // Create user
                 $user = User::firstOrCreate(

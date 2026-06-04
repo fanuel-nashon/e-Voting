@@ -1,6 +1,8 @@
-# e-Voting System
+# e-Voting System — Mzumbe University
 
-A full-featured web-based election platform for university student organisation elections. Administrators manage candidates, faculties, programs, and voters. Voters cast secret ballots through a secure, role-gated interface. Results are automatically distributed via email with a candidate acceptance workflow.
+A full-featured web-based election platform for the Mzumbe University Student Union. Students self-register with their personal details, await faculty-level approval, then vote securely behind OTP two-factor authentication. Administrators manage the full election lifecycle from candidate setup through to certified result distribution via email.
+
+---
 
 ## Tech Stack
 
@@ -9,58 +11,106 @@ A full-featured web-based election platform for university student organisation 
 | Backend | Laravel 12 (PHP 8.2) |
 | Auth & Permissions | Spatie Laravel Permission v6 |
 | Frontend | Bootstrap 4, Bootstrap Icons, vanilla JS (Fetch API / AJAX) |
-| Database | MySQL / MariaDB |
+| Database | MySQL / MariaDB 10.4+ |
 | Sessions | Database-backed |
-| Email | Laravel Mail (SMTP / Mailpit) |
+| Email | Laravel Mail (SMTP / Mailpit / Log driver) |
 
-## Roles & Access
+---
 
-| Role | Permissions | Default Landing Page |
+## Roles & Landing Pages
+
+| Role | Permissions | Landing Page |
 |---|---|---|
 | `admin` | `manage_users` + `manage_election` | `/dashboard` |
 | `election_admin` | `manage_election` | `/election` |
-| `voter` | `vote` | `/voter` |
+| `voter` | `vote` | OTP verification → `/voter` |
 
-## Features
+---
+
+## Faculties & Programmes
+
+| Faculty | Programmes |
+|---|---|
+| Faculty of Science and Technology | BSc ICT with Business, BSc ICT with Management, BSc Information Technology Systems |
+| Faculty of Social Sciences | BA Sociology, BA Political Science and Public Administration, BA Development Studies, BA Communication and Media Studies |
+| School of Business | Bachelor of Accounting and Finance, Bachelor of Entrepreneurship and Innovation Management, Bachelor of Business Administration and Marketing |
+| School of Law | LLB Law, LLB Law with International Relations |
+| School of Public Administration and Management | BA Public Administration, BA Local Government Administration, BA Human Resource Management |
+
+---
+
+## Two-Email System
+
+Each voter has two separate email addresses:
+
+| Type | Format | Purpose |
+|---|---|---|
+| **Login email** (system-generated) | `firstname.lastname.YEAR@mzumbeuniversity.com` | Used only for signing in |
+| **Personal email** (student-provided) | e.g. `john@gmail.com` | Receives OTPs, credentials, and results |
+
+---
+
+## Feature Overview
+
+### Voter Self-Registration (`/register/voter`)
+- Student provides: full name, **personal email**, registration number (must contain enrolment year), programme, passport photo
+- Faculty auto-fills from selected programme
+- System generates the login email automatically
+- Application queued as **pending** — no access until approved
+
+### Election Admin Approval
+- Each election admin is assigned to a **specific faculty**
+- Pending Registrations panel in Election Control Centre shows only their faculty's queue
+- **Approve** → creates user account + student profile, emails login credentials to student's personal email
+- **Reject** → optional reason recorded
+
+### OTP Two-Factor Login (voters only)
+1. Voter submits login email + password
+2. System validates, sends 6-digit OTP to **personal email** (10-min expiry)
+3. Voter enters OTP on dedicated page — only fully authenticated on correct code
+4. Admins and election admins bypass OTP
 
 ### Admin Console (`/dashboard`)
-- Manage faculties, programs, candidates (full CRUD)
-- Manage users — create voters, election admins, and admins
+- Manage faculties, programmes, and candidates (full CRUD)
+- Manage users — create admins, election admins, voters; assign faculty to election admins
 
-### Election Control Centre (`/election`) — admin & election_admin
+### Election Control Centre (`/election`)
 - **Timeline settings** — set voting open/close datetime and acceptance deadline
-- **Live activity log** — real-time feed of anonymised vote events (voter hash, faculty, position, IP prefix), polled every 5 s
-- **Release Results** — calculates winners per position, emails every candidate with result + acceptance link
-- **Candidate Acceptances** — table showing each candidate's response; election admin verifies responses
-- **Send Results to Voters** — emails final certified results to all registered voters
+- **Pending voter registrations** — approve or reject with one click
+- **Live activity log** — anonymised vote feed (hashed voter ID, faculty, position, partial IP), auto-refreshes every 5 s
+- **Release Results** — calculates winners per position, emails each candidate at their personal email with result + acceptance link
+- **Candidate Acceptances** — verify each candidate's response
+- **Send Results to Voters** — emails final certified results to all voters' personal emails
 
 ### Voter Portal (`/voter`)
-- Sees only candidates relevant to their faculty/program:
-  - **President** — all voters
-  - **Faculty Rep / Senator** — voters in that faculty
-  - **Class Rep** — voters in that program
+- Filtered ballot — only sees candidates relevant to their faculty/programme
 - Live countdown to voting deadline
-- Select one candidate per eligible position
-- **Review page** — confirm all selections before submitting (ballot locked on confirm)
-- Duplicate-vote prevention enforced server-side
-- Election timeline enforced (cannot vote outside open window)
+- Review step before confirming — one-way submission
+- Duplicate-vote prevention and timeline enforcement server-side
 
 ### Candidate Acceptance Workflow
-1. Admin releases results → candidates emailed with result + signed link
+1. Admin releases results → candidates emailed with result + signed token link
 2. Candidate opens `/acceptance/{token}` → accepts or declines
-3. Election admin verifies each response in the control centre
+3. Election admin verifies in the control centre
 4. Admin sends results email to all voters
 
-### Security
-- All votes hashed to prevent ballot linkage
-- Voter identity hashed in audit logs (SHA-256 + APP_KEY)
-- Duplicate votes blocked per student per position
+---
+
+## Security Notes
+
+- OTP two-factor for all voter logins
+- Voter identity hashed in audit logs (SHA-256 + APP\_KEY) — ballot secrecy preserved
+- Duplicate votes blocked per student per position at DB level
 - Voting window strictly enforced server-side
-- Acceptance links are single-use token-gated (no authentication required)
+- Acceptance links are single-use, token-gated (no login required)
+
+---
 
 ## Quick Start
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for full installation and setup instructions.
+
+---
 
 ## License
 

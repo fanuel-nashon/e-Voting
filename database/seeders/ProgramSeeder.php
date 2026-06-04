@@ -11,32 +11,30 @@ class ProgramSeeder extends Seeder
     public function run(): void
     {
         $map = [
-            'Faculty of Engineering & Technology' => [
-                'BSc Computer Science',
-                'BSc Information Technology',
-                'BSc Electrical Engineering',
-                'BSc Civil Engineering',
+            'Faculty of Science and Technology' => [
+                'BSc ICT with Business',
+                'BSc ICT with Management',
+                'BSc Information Technology Systems',
             ],
-            'Faculty of Science' => [
-                'BSc Mathematics',
-                'BSc Physics',
-                'BSc Chemistry',
-                'BSc Biology',
-            ],
-            'Faculty of Business & Economics' => [
-                'BBA Business Administration',
-                'BSc Accounting & Finance',
-                'BSc Economics',
-            ],
-            'Faculty of Arts & Social Sciences' => [
+            'Faculty of Social Sciences' => [
                 'BA Sociology',
-                'BA Political Science',
-                'BA Communication Studies',
+                'BA Political Science and Public Administration',
+                'BA Development Studies',
+                'BA Communication and Media Studies',
             ],
-            'Faculty of Medicine & Health Sciences' => [
-                'MBChB Medicine & Surgery',
-                'BSc Nursing',
-                'BSc Public Health',
+            'School of Business' => [
+                'Bachelor of Accounting and Finance',
+                'Bachelor of Entrepreneurship and Innovation Management',
+                'Bachelor of Business Administration and Marketing',
+            ],
+            'School of Law' => [
+                'LLB Law',
+                'LLB Law with International Relations',
+            ],
+            'School of Public Administration and Management' => [
+                'BA Public Administration',
+                'BA Local Government Administration',
+                'BA Human Resource Management',
             ],
         ];
 

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('position_name');        // position type cast
             $table->string('action')->default('vote_cast'); // vote_cast | login | logout
             $table->string('ip_prefix', 16)->nullable(); // first two octets only
-            $table->json('metadata')->nullable();
+            $table->longText('metadata')->nullable();
             $table->timestamp('created_at')->useCurrent();
         });
     }

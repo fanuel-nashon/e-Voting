@@ -11,6 +11,7 @@ use App\Models\Position;
 use App\Models\Student;
 use App\Models\Vote;
 use App\Models\VoteLog;
+use App\Models\VoterRegistration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -34,7 +35,14 @@ class ElectionAdminController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('election-admin.dashboard', compact('election', 'stats', 'acceptances'));
+        $user = auth()->user();
+        $pendingQuery = VoterRegistration::with(['program', 'faculty'])->where('status', 'pending');
+        if ($user->hasRole('election_admin') && $user->faculty_id) {
+            $pendingQuery->where('faculty_id', $user->faculty_id);
+        }
+        $pendingRegistrations = $pendingQuery->orderByDesc('created_at')->get();
+
+        return view('election-admin.dashboard', compact('election', 'stats', 'acceptances', 'pendingRegistrations'));
     }
 
     // ── Timeline ──────────────────────────────────────────────────────────────
@@ -158,7 +166,7 @@ class ElectionAdminController extends Controller
         // Email every registered voter
         $voters = \App\Models\User::role('voter')->get();
         foreach ($voters as $voter) {
-            Mail::to($voter->email)->send(new VoterResultsMail($results, $election->title));
+            Mail::to($voter->getMailAddress())->send(new VoterResultsMail($results, $election->title));
         }
 
         return response()->json(['success' => true, 'message' => "Results emailed to {$voters->count()} voters."]);
