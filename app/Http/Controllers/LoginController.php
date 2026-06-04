@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Session;
 
 class LoginController extends Controller
 {
@@ -31,9 +30,15 @@ class LoginController extends Controller
 
         if(Auth::attempt($credentials))
             {
+                $user = Auth::user();
+                $redirect = match(true) {
+                    $user->hasRole('voter')          => route('voter.dashboard'),
+                    $user->hasRole('election_admin') => route('election.dashboard'),
+                    default                          => route('dashboard'),
+                };
                 return response()->json([
-                    'status'=>'success',
-                    'redirect'=>route('dashboard')
+                    'status'   => 'success',
+                    'redirect' => $redirect,
                 ]);
             }
 
