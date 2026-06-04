@@ -33,43 +33,61 @@
 
 
 <script>
-function changePassword(e){
-    e.preventDefault();
+let inPasswordStep = false;
 
-    let form = document.getElementById('form');
-    let formData = new FormData(form);
+function showError(message) {
+    const el = document.getElementById(inPasswordStep ? 'passErr' : 'err');
+    el.textContent = message;
+    el.classList.remove('d-none');
+}
+
+function clearErrors() {
+    ['err', 'passErr'].forEach(id => {
+        const el = document.getElementById(id);
+        el.textContent = '';
+        el.classList.add('d-none');
+    });
+}
+
+function changePassword(e) {
+    e.preventDefault();
+    clearErrors();
+
+    const formData = new FormData(document.getElementById('form'));
+    const csrfToken = document.querySelector('input[name="_token"]').value;
 
     fetch("{{ route('change.password') }}", {
         method: 'POST',
-        headers: {
-            "X-CSRF-TOKEN": document.querySelector('input[name=\"_token\"]').value
-        },
+        headers: { 'X-CSRF-TOKEN': csrfToken },
         body: formData
     })
-    .then(res => res.json())
+    .then(async res => {
+        const data = await res.json();
+
+        // Laravel validation failure (422) — extract the first error message
+        if (res.status === 422) {
+            const msg = data.errors
+                ? Object.values(data.errors).flat()[0]
+                : (data.message || 'Validation failed.');
+            throw new Error(msg);
+        }
+
+        return data;
+    })
     .then(data => {
+        if (data.status === 'token_valid') {
+            inPasswordStep = true;
+            document.getElementById('tokenSection').style.display = 'none';
+            document.getElementById('passwordSection').style.display = 'block';
 
-        if (data.status === "token_valid") {
-            document.getElementById("tokenSection").style.display = "none";
-            document.getElementById("passwordSection").style.display = "block";
-        }
-
-        else if (data.status === "password_reset") {
+        } else if (data.status === 'password_reset') {
             window.location.href = "{{ route('login') }}";
-        }
 
-        else {
-            let err = document.getElementById("err");
-            err.textContent = data.message;
-            err.classList.remove("d-none");
+        } else {
+            showError(data.message || 'Something went wrong.');
         }
     })
-    .catch(error => {
-        console.log(error);
-        let err = document.getElementById("err");
-        err.textContent = "Something went wrong.";
-        err.classList.remove("d-none");
-    });
+    .catch(err => showError(err.message));
 
     return false;
 }
