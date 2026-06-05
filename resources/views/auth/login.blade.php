@@ -233,7 +233,7 @@
         })
         .then(r => r.json())
         .then(data => {
-            if (data.status === 'success') {
+            if (data.status === 'success' || data.status === 'otp_required') {
                 window.location.href = data.redirect;
             } else {
                 err.textContent = data.message;
