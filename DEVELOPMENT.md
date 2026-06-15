@@ -119,11 +119,14 @@ Or go to **Admin Console → Users / Voters → Set Faculty** next to the electi
 ## 7. Useful Commands
 
 ```bash
-php artisan optimize:clear          # clear config, route, view, and app caches
-php artisan permission:cache-reset  # clear Spatie permission cache (run after role changes)
-php artisan migrate:fresh --seed    # full reset — drops all tables and reseeds
-php artisan storage:link            # link storage/app/public → public/storage (voter photos)
+php artisan optimize:clear               # clear config, route, view, and app caches
+php artisan permission:cache-reset       # clear Spatie permission cache (run after role changes)
+php artisan migrate:fresh --seed         # full reset — drops all tables and reseeds
+php artisan storage:link                 # link storage/app/public → public/storage (voter photos)
 php artisan db:seed --class=UsersSeeder  # re-run only the admin accounts seeder
+php artisan db:seed --class=DemoSeeder   # create demo voters and open election window
+php artisan demo:vote                    # simulate real-time voting (requires DemoSeeder first)
+php artisan demo:vote --reset            # wipe votes/logs, then simulate again
 ```
 
 ---
@@ -266,6 +269,75 @@ Go to `/reports` (accessible from the sidebar on any admin page).
 - **By Faculty** tab shows turnout broken down by faculty.
 - **All Candidates** tab shows a searchable league table across all candidates.
 - Use the Export buttons on the Overview tab to download any report as CSV.
+
+---
+
+## Demo Mode
+
+The demo factory lets you showcase the full election lifecycle — live activity log, real-time vote accumulation, and post-election reporting — without real voters or email configuration.
+
+### Setup (one time)
+
+```bash
+php artisan migrate:fresh --seed          # full database reset with all base data
+php artisan db:seed --class=DemoSeeder   # add 80 demo voters + open the election window
+```
+
+`DemoSeeder` is idempotent — re-running it skips accounts that already exist and resets the election window to open now, closing in 4 hours.
+
+### Run the simulation
+
+```bash
+php artisan demo:vote
+```
+
+Open `/election` in the browser **before** running this. Votes appear in the live activity log every ~0.5 s. When it finishes, open `/reports` to see the full statistical report with charts.
+
+### `demo:vote` options
+
+| Option | Default | Effect |
+|---|---|---|
+| `--speed=fast` | — | ~0.1 s avg between voters — 80 voters finish in ~8 s |
+| `--speed=normal` | ✔ | ~0.5 s avg — good pace for live presentations |
+| `--speed=slow` | — | ~2.5 s avg — draw it out for long demos |
+| `--turnout=N` | `78` | Percentage of voters that participate (1–100) |
+| `--voters=N` | `0` | Hard cap on voters simulated; `0` uses `--turnout` |
+| `--reset` | — | Wipes all votes and vote_logs first, then runs |
+
+### Re-running a demo
+
+```bash
+php artisan demo:vote --reset            # clear votes, simulate again (same voters)
+php artisan demo:vote --reset --speed=fast   # fast reset + fast simulation
+```
+
+To start completely fresh (drop all data including demo voters):
+
+```bash
+php artisan migrate:fresh --seed
+php artisan db:seed --class=DemoSeeder
+php artisan demo:vote
+```
+
+### Demo account credentials
+
+| Pattern | Example | Password |
+|---|---|---|
+| `demo.voter.N@mzumbeuniversity.com` | `demo.voter.1@mzumbeuniversity.com` | `demo1234` |
+
+Demo accounts have realistic Tanzanian names and are spread evenly across all programmes and faculties. Their registration numbers follow the format `DEMO/PROG/2024/NNN`. These accounts are clearly distinguishable from real voter accounts (`std####@students.university.ac.tz`) in the Users panel.
+
+### What each speed setting looks like in the browser
+
+| Speed | Voters per minute | Live log behaviour |
+|---|---|---|
+| `fast` | ~600 | Log fills in bursts; good for a quick "see it work" moment |
+| `normal` | ~120 | Steady stream of entries — ideal for a watched live demo |
+| `slow` | ~24 | Sparse, deliberate entries — useful if talking through each vote |
+
+### Voting weight distribution
+
+Candidates are assigned weighted probabilities so results look realistic rather than uniform. Within each position the candidate seeded first receives approximately 42% of votes, the second ~28%, the third ~16%, and so on. Combined with a ~12% per-position abstention rate, this reliably produces a clear winner, a competitive runner-up, and a realistic participation curve across faculties.
 
 ---
 

@@ -103,6 +103,21 @@ Each voter has two separate email addresses:
 
 ---
 
+## Demo Mode
+
+A self-contained simulation environment lets you demonstrate the full election lifecycle without real voters.
+
+```bash
+php artisan db:seed --class=DemoSeeder   # create 80 voters, open election (now → +4 h)
+php artisan demo:vote --speed=normal     # simulate voting in real time
+```
+
+Open `/election` in the browser before running the simulation — votes appear in the live activity log every ~0.5 s. When the command finishes, open `/reports` to explore the full statistical report.
+
+See [DEVELOPMENT.md — Demo Mode](DEVELOPMENT.md#demo-mode) for all options and re-run instructions.
+
+---
+
 ## Security Notes
 
 - OTP two-factor for all voter logins
