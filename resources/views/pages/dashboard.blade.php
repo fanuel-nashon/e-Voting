@@ -55,6 +55,11 @@
                         <i class="bi bi-journal-text me-3 fs-5"></i> Audit Logs
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{{ route('reports.index') }}" class="nav-link text-white d-flex align-items-center px-3 py-2.5 rounded-3 hover-link">
+                        <i class="bi bi-bar-chart-line me-3 fs-5"></i> Reports
+                    </a>
+                </li>
             </ul>
         </div>
 

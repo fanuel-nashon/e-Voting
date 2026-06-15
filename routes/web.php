@@ -4,6 +4,7 @@ use App\Http\Controllers\AcceptanceController;
 use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\FacultyController;
 use App\Http\Controllers\Admin\ProgramController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\ElectionAdminController;
 use App\Http\Controllers\LoginController;
@@ -90,6 +91,10 @@ Route::middleware('check.permission:manage_election')->group(function () {
     Route::get('/voter-registrations/pending', [VoterRegistrationController::class, 'pendingList'])->name('voter.registrations.pending');
     Route::post('/voter-registrations/{registration}/approve', [VoterRegistrationController::class, 'approve'])->name('voter.registrations.approve');
     Route::post('/voter-registrations/{registration}/reject', [VoterRegistrationController::class, 'reject'])->name('voter.registrations.reject');
+
+    // Voting reports
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export', [ReportController::class, 'exportCsv'])->name('reports.export');
 });
 
 /*

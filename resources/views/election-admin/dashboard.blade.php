@@ -18,6 +18,7 @@
         <li><a href="{{ route('dashboard') }}" class="nav-link text-white d-flex align-items-center px-3 py-2 rounded-3 hover-link"><i class="bi bi-speedometer2 me-3 fs-5"></i>Admin Console</a></li>
         <li><a href="{{ route('election.dashboard') }}" class="nav-link text-white d-flex align-items-center px-3 py-2 rounded-3 active-link"><i class="bi bi-broadcast me-3 fs-5"></i>Election Dashboard</a></li>
         <li><a href="{{ route('users.index') }}" class="nav-link text-white d-flex align-items-center px-3 py-2 rounded-3 hover-link"><i class="bi bi-people me-3 fs-5"></i>Users / Voters</a></li>
+        <li><a href="{{ route('reports.index') }}" class="nav-link text-white d-flex align-items-center px-3 py-2 rounded-3 hover-link"><i class="bi bi-bar-chart-line me-3 fs-5"></i>Reports</a></li>
       </ul>
     </div>
     <div class="w-100 pb-2">

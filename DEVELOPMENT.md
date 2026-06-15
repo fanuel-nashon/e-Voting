@@ -171,6 +171,11 @@ php artisan db:seed --class=UsersSeeder  # re-run only the admin accounts seeder
 | GET | `/voter-registrations/pending` | List pending registrations (JSON) |
 | POST | `/voter-registrations/{id}/approve` | Approve + create account + email credentials |
 | POST | `/voter-registrations/{id}/reject` | Reject with optional reason |
+| GET | `/reports` | Voting reports dashboard (4 tabs) |
+| GET | `/reports/export?type=overall` | Download overall election CSV report |
+| GET | `/reports/export?type=positions` | Download per-position CSV report |
+| GET | `/reports/export?type=faculties` | Download per-faculty participation CSV report |
+| GET | `/reports/export?type=candidates` | Download all-candidates CSV report |
 
 ### User Management (`manage_users`)
 
@@ -253,6 +258,14 @@ Open `/acceptance/{token}` → submit Accept or Decline response.
 
 ### 9. Verify & publish
 In `/election` → verify each acceptance → **Send Results to All Voters** → all voters receive results at their personal email.
+
+### 10. View reports
+Go to `/reports` (accessible from the sidebar on any admin page).
+- **Overview** tab shows overall participation stats and charts.
+- **By Position** tab shows ranked results for every position.
+- **By Faculty** tab shows turnout broken down by faculty.
+- **All Candidates** tab shows a searchable league table across all candidates.
+- Use the Export buttons on the Overview tab to download any report as CSV.
 
 ---
 

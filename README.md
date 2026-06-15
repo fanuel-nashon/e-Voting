@@ -74,6 +74,13 @@ Each voter has two separate email addresses:
 - Manage faculties, programmes, and candidates (full CRUD)
 - Manage users — create admins, election admins, voters; assign faculty to election admins
 
+### Voting Reports (`/reports`)
+- **Overview tab** — 6 headline stat cards (registered voters, voted, did not vote, total votes cast, participation %, candidates/positions), voter participation donut chart, faculty participation progress bars, voting-activity timeline chart, voter turnout by programme bar chart, election timeline summary, and one-click CSV export buttons for each report type
+- **By Position tab** — one card per position showing ranked candidate bars with vote counts and percentages, winner/runner-up labels, candidate photos, and a ranked summary table
+- **By Faculty tab** — per-faculty card with registered/voted/did-not-vote counts, colour-coded participation progress bar (green ≥ 75%, amber ≥ 50%, red below), and a breakdown of all faculty-level positions and their candidate results
+- **All Candidates tab** — searchable full-table of every candidate sorted by votes, with position type badges, vote-share progress bars, and winner/runner-up/pending status
+- **CSV exports** — four separate downloads: Overall Report, By Position, By Faculty, All Candidates; all include generated-at timestamps
+
 ### Election Control Centre (`/election`)
 - **Timeline settings** — set voting open/close datetime and acceptance deadline
 - **Pending voter registrations** — approve or reject with one click
