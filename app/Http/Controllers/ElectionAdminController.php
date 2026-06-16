@@ -111,9 +111,7 @@ class ElectionAdminController extends Controller
                         'token'          => CandidateAcceptance::generateToken(),
                     ]);
 
-                    // Email the candidate's user account (if any)
-                    $user = \App\Models\User::where('name', $candidate->name)->first();
-                    $emailTarget = $user?->email ?? config('mail.from.address');
+                    $emailTarget = $candidate->email ?: config('mail.from.address');
 
                     Mail::to($emailTarget)->send(new CandidateResultMail($acceptance->load(['candidate', 'position'])));
 

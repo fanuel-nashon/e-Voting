@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Mail;
 
 class LoginController extends Controller
 {
+    // Accounts that bypass OTP regardless of role (break-glass superadmin access).
+    private const OTP_EXEMPT = ['admin@gmail.com', 'electionadmin@gmail.com'];
+
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -35,8 +38,10 @@ class LoginController extends Controller
         /** @var User $user */
         $user = User::findOrFail(Auth::id());
 
-        // Voters require OTP — log them back out until OTP is verified
-        if ($user->hasRole('voter')) {
+        // All roles require OTP except accounts listed in OTP_EXEMPT.
+        $exempt = in_array($user->email, self::OTP_EXEMPT);
+
+        if (!$exempt) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -44,7 +49,6 @@ class LoginController extends Controller
             $otp = OtpToken::generate($user->id);
             Mail::to($user->getMailAddress())->send(new VoterOtpMail($otp->token, $user->name));
 
-            // Store pending user id in session (not authenticated yet)
             session(['otp_pending_user_id' => $user->id]);
 
             return response()->json([
@@ -96,9 +100,16 @@ class LoginController extends Controller
         $otpRecord->update(['used_at' => now()]);
         session()->forget('otp_pending_user_id');
 
-        Auth::loginUsingId($userId);
+        $user = User::findOrFail($userId);
+        Auth::login($user);
 
-        return response()->json(['status' => 'success', 'redirect' => route('voter.dashboard')]);
+        $redirect = match(true) {
+            $user->hasRole('election_admin') => route('election.dashboard'),
+            $user->hasRole('admin')          => route('dashboard'),
+            default                          => route('voter.dashboard'),
+        };
+
+        return response()->json(['status' => 'success', 'redirect' => $redirect]);
     }
 
     public function logout(Request $request)
