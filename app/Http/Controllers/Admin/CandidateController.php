@@ -37,6 +37,7 @@ class CandidateController extends Controller
     {
         $request->validate([
             'name'          => 'required|string|max:255',
+            'email'         => 'required|email|max:255',
             'image'         => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
             'position_type' => 'required|in:president,faculty_rep,senator,class_rep',
             'faculty_id'    => 'required_if:position_type,faculty_rep,senator|nullable|exists:faculties,id',
@@ -49,6 +50,7 @@ class CandidateController extends Controller
 
         $candidate = Candidate::create([
             'name'        => $request->name,
+            'email'       => $request->email,
             'image'       => $imagePath,
             'position_id' => $position->id,
         ]);
@@ -68,6 +70,7 @@ class CandidateController extends Controller
 
         $request->validate([
             'name'          => 'required|string|max:255',
+            'email'         => 'required|email|max:255',
             'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'position_type' => 'required|in:president,faculty_rep,senator,class_rep',
             'faculty_id'    => 'required_if:position_type,faculty_rep,senator|nullable|exists:faculties,id',
@@ -82,6 +85,7 @@ class CandidateController extends Controller
         $position = $this->findOrCreatePosition($request->position_type, $request->faculty_id, $request->program_id);
 
         $candidate->name        = $request->name;
+        $candidate->email       = $request->email;
         $candidate->position_id = $position->id;
         $candidate->save();
 

@@ -105,6 +105,7 @@
                                     <th class="py-3 px-4" style="width: 60px;">#</th>
                                     <th class="py-3 px-4" style="width: 70px;">Photo</th>
                                     <th class="py-3 px-4">Name</th>
+                                    <th class="py-3 px-4">Email</th>
                                     <th class="py-3 px-4">Position</th>
                                     <th class="py-3 px-4">Faculty / Program</th>
                                     <th class="py-3 px-4" style="width: 160px;">Actions</th>
@@ -112,7 +113,7 @@
                             </thead>
                             <tbody id="candidatesTbody">
                                 <tr id="loadingRow">
-                                    <td colspan="6" class="text-center text-muted py-5">
+                                    <td colspan="7" class="text-center text-muted py-5">
                                         <i class="bi bi-arrow-repeat me-2"></i>Loading candidates...
                                     </td>
                                 </tr>
@@ -168,6 +169,12 @@
                                 <label class="form-label fw-semibold">Candidate Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" name="name" required
                                        placeholder="e.g., John Doe">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" name="email" required
+                                       placeholder="e.g., john.doe@example.com">
+                                <small class="text-muted">Results and acceptance link will be sent here.</small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -239,6 +246,11 @@
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Candidate Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" name="name" id="editCandidateName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" name="email" id="editCandidateEmail" required>
+                                <small class="text-muted">Results and acceptance link will be sent here.</small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -381,7 +393,7 @@
         tbody.innerHTML = '';
 
         if (candidates.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-5">
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-5">
                 <i class="bi bi-person-x fs-3 d-block mb-2"></i>No candidates registered yet.</td></tr>`;
             return;
         }
@@ -395,6 +407,7 @@
                 <td class="px-4 fw-semibold text-secondary">${i + 1}</td>
                 <td class="px-4">${buildAvatarHtml(c)}</td>
                 <td class="px-4 fw-medium text-dark">${escapeHtml(c.name)}</td>
+                <td class="px-4 text-muted small">${escapeHtml(c.email || '—')}</td>
                 <td class="px-4">
                     <span class="badge badge-${type} px-3 py-1 rounded-pill" style="font-size:0.78rem;">${label}</span>
                 </td>
@@ -459,8 +472,9 @@
         const c = candidates.find(c => c.id == id);
         if (!c) return;
 
-        document.getElementById('editCandidateId').value    = c.id;
+        document.getElementById('editCandidateId').value     = c.id;
         document.getElementById('editCandidateName').value  = c.name;
+        document.getElementById('editCandidateEmail').value = c.email || '';
         document.getElementById('editImageInput').value     = '';
 
         const typeSel = document.getElementById('editPositionType');
