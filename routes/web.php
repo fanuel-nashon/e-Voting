@@ -107,4 +107,5 @@ Route::middleware('check.permission:manage_users')->group(function () {
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::patch('/users/{user}/faculty', [UserController::class, 'assignFaculty'])->name('users.assign-faculty');
+    Route::post('/users/{user}/student', [UserController::class, 'attachStudent'])->name('users.attach-student');
 });

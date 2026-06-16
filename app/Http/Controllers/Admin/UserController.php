@@ -4,28 +4,39 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Faculty;
+use App\Models\Program;
+use App\Models\Student;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with(['roles', 'faculty'])->get()->map(function ($user) {
+        $users = User::with(['roles', 'faculty', 'student.faculty', 'student.program'])->get()->map(function ($user) {
             return [
-                'id'         => $user->id,
-                'name'       => $user->name,
-                'email'      => $user->email,
-                'role'       => $user->roles->first()?->name ?? 'none',
-                'faculty_id' => $user->faculty_id,
-                'faculty'    => $user->faculty?->name,
+                'id'              => $user->id,
+                'name'            => $user->name,
+                'email'           => $user->email,
+                'role'            => $user->roles->first()?->name ?? 'none',
+                'faculty_id'      => $user->faculty_id,
+                'faculty'         => $user->faculty?->name,
+                'student_id'      => $user->student?->id,
+                'student_reg_no'  => $user->student?->reg_no,
+                'student_name'    => $user->student?->name,
+                'student_faculty' => $user->student?->faculty?->name,
+                'student_program' => $user->student?->program?->name,
+                'student_faculty_id' => $user->student?->faculty_id,
+                'student_program_id' => $user->student?->program_id,
             ];
         });
 
         $faculties = Faculty::orderBy('name')->get(['id', 'name']);
+        $programs  = Program::with('faculty')->orderBy('name')->get(['id', 'name', 'faculty_id']);
 
-        return view('users.index', compact('users', 'faculties'));
+        return view('users.index', compact('users', 'faculties', 'programs'));
     }
 
     public function store(Request $request)
@@ -69,6 +80,40 @@ class UserController extends Controller
         return response()->json([
             'success' => true,
             'faculty' => $user->fresh()->faculty?->name,
+        ]);
+    }
+
+    public function attachStudent(Request $request, User $user)
+    {
+        $request->validate([
+            'name'       => 'required|string|max:191',
+            'reg_no'     => ['required', 'string', 'max:191', Rule::unique('students', 'reg_no')->ignore($user->student?->id)],
+            'faculty_id' => 'required|exists:faculties,id',
+            'program_id' => 'required|exists:programs,id',
+        ]);
+
+        $student = Student::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'reg_no'     => $request->reg_no,
+                'name'       => $request->name,
+                'faculty_id' => $request->faculty_id,
+                'program_id' => $request->program_id,
+            ]
+        );
+
+        $student->load(['faculty', 'program']);
+
+        return response()->json([
+            'success'            => true,
+            'message'            => 'Student profile saved.',
+            'student_id'         => $student->id,
+            'student_reg_no'     => $student->reg_no,
+            'student_name'       => $student->name,
+            'student_faculty'    => $student->faculty?->name,
+            'student_program'    => $student->program?->name,
+            'student_faculty_id' => $student->faculty_id,
+            'student_program_id' => $student->program_id,
         ]);
     }
 

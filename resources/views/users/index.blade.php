@@ -147,19 +147,27 @@
                     <table class="table table-hover align-middle border-0">
                         <thead class="table-light">
                             <tr>
-                                <th class="py-3 px-4" style="width: 70px;">S/No</th>
+                                <th class="py-3 px-4" style="width: 60px;">S/No</th>
                                 <th class="py-3 px-4">Name</th>
                                 <th class="py-3 px-4">Email</th>
                                 <th class="py-3 px-4">Role</th>
-                                <th class="py-3 px-4" style="width: 120px;">Actions</th>
+                                <th class="py-3 px-4">Student Profile</th>
+                                <th class="py-3 px-4" style="width: 160px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="usersTbody">
                             @forelse($users as $index => $user)
-                            <tr data-id="{{ $user['id'] }}" data-role="{{ $user['role'] }}">
+                            <tr data-id="{{ $user['id'] }}"
+                                data-role="{{ $user['role'] }}"
+                                data-name="{{ $user['name'] }}"
+                                data-student-id="{{ $user['student_id'] }}"
+                                data-reg-no="{{ $user['student_reg_no'] }}"
+                                data-student-name="{{ $user['student_name'] }}"
+                                data-faculty-id="{{ $user['student_faculty_id'] }}"
+                                data-program-id="{{ $user['student_program_id'] }}">
                                 <td class="px-4 fw-semibold text-secondary">{{ $index + 1 }}</td>
                                 <td class="px-4 fw-medium text-dark">{{ $user['name'] }}</td>
-                                <td class="px-4 text-muted">{{ $user['email'] }}</td>
+                                <td class="px-4 text-muted small">{{ $user['email'] }}</td>
                                 <td class="px-4">
                                     <span class="badge rounded-pill px-3 py-1 role-badge-{{ $user['role'] }}">
                                         {{ match($user['role']) {
@@ -170,20 +178,42 @@
                                         } }}
                                     </span>
                                 </td>
-                                <td class="px-4">
-                                    @if($user['id'] !== Auth::id())
-                                    <button class="btn btn-sm btn-outline-danger rounded-3"
-                                            onclick="deleteUser({{ $user['id'] }}, this.closest('tr'))">
-                                        <i class="bi bi-trash-fill me-1"></i>Delete
-                                    </button>
+                                <td class="px-4 student-profile-cell">
+                                    @if($user['role'] === 'voter')
+                                        @if($user['student_id'])
+                                            <div class="small fw-semibold" style="color:#091c3d;">{{ $user['student_reg_no'] }}</div>
+                                            <div class="small text-muted">{{ $user['student_faculty'] }}</div>
+                                            <div class="small text-muted">{{ $user['student_program'] }}</div>
+                                        @else
+                                            <span class="badge rounded-pill px-2" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-size:.75rem;">No profile</span>
+                                        @endif
                                     @else
-                                    <span class="text-muted small">You</span>
+                                        <span class="text-muted small">—</span>
                                     @endif
+                                </td>
+                                <td class="px-4">
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        @if($user['role'] === 'voter')
+                                        <button class="btn btn-sm rounded-3 fw-semibold"
+                                                style="background:#091c3d;color:#fff;font-size:.78rem;"
+                                                onclick="openProfileModal(this.closest('tr'))">
+                                            <i class="bi bi-person-badge me-1"></i>{{ $user['student_id'] ? 'Edit Profile' : 'Set Profile' }}
+                                        </button>
+                                        @endif
+                                        @if($user['id'] !== Auth::id())
+                                        <button class="btn btn-sm btn-outline-danger rounded-3"
+                                                onclick="deleteUser({{ $user['id'] }}, this.closest('tr'))">
+                                            <i class="bi bi-trash-fill"></i>
+                                        </button>
+                                        @else
+                                        <span class="text-muted small">You</span>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                             @empty
                             <tr id="emptyRow">
-                                <td colspan="5" class="text-center text-muted py-4">No users found.</td>
+                                <td colspan="6" class="text-center text-muted py-4">No users found.</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -237,6 +267,65 @@
                         <button type="button" class="btn btn-secondary rounded-3" data-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn text-white px-4 rounded-3" style="background-color: #f5951b;">
                             <span id="createUserBtnText">Create User</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Set Student Profile Modal -->
+<div class="modal fade" id="studentProfileModal" tabindex="-1" aria-labelledby="studentProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0" id="studentProfileModalLabel" style="color:#091c3d;">Student Profile</h5>
+                    <p class="text-muted small mb-0" id="profileModalSubtitle"></p>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body pt-3">
+                <form id="studentProfileForm" onsubmit="saveStudentProfile(event)">
+                    <input type="hidden" id="profileUserId">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">Full Name</label>
+                        <input type="text" class="form-control" id="profileName" required placeholder="Student's full name">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">Registration Number</label>
+                        <input type="text" class="form-control" id="profileRegNo" required placeholder="e.g. MZ/ICT/2022/001">
+                        <div class="form-text">Must be unique. Include the enrolment year (e.g. 2022).</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">Faculty</label>
+                        <select class="form-control" id="profileFacultyId" required onchange="filterProgramsByFaculty()">
+                            <option value="">— Select faculty —</option>
+                            @foreach($faculties as $f)
+                                <option value="{{ $f->id }}">{{ $f->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">Programme</label>
+                        <select class="form-control" id="profileProgramId" required>
+                            <option value="">— Select faculty first —</option>
+                        </select>
+                    </div>
+
+                    <p class="text-danger small mb-3 d-none" id="profileErr"></p>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-secondary rounded-3" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn text-white px-4 rounded-3" style="background:#f5951b;">
+                            <span id="profileBtnText"><i class="bi bi-person-badge me-1"></i>Save Profile</span>
                         </button>
                     </div>
                 </form>
@@ -309,20 +398,36 @@
         const tr = document.createElement('tr');
         tr.setAttribute('data-id', user.id);
         tr.setAttribute('data-role', user.role);
+        tr.setAttribute('data-name', user.name);
+        tr.setAttribute('data-student-id', '');
+        tr.setAttribute('data-reg-no', '');
+        tr.setAttribute('data-student-name', '');
+        tr.setAttribute('data-faculty-id', '');
+        tr.setAttribute('data-program-id', '');
         tr.innerHTML = `
             <td class="px-4 fw-semibold text-secondary">${count}</td>
             <td class="px-4 fw-medium text-dark">${escapeHtml(user.name)}</td>
-            <td class="px-4 text-muted">${escapeHtml(user.email)}</td>
+            <td class="px-4 text-muted small">${escapeHtml(user.email)}</td>
             <td class="px-4">
                 <span class="badge rounded-pill px-3 py-1 role-badge-${user.role}">
                     ${roleLabels[user.role] || user.role}
                 </span>
             </td>
+            <td class="px-4 student-profile-cell">
+                ${user.role === 'voter'
+                    ? '<span class="badge rounded-pill px-2" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-size:.75rem;">No profile</span>'
+                    : '<span class="text-muted small">—</span>'}
+            </td>
             <td class="px-4">
-                <button class="btn btn-sm btn-outline-danger rounded-3"
-                        onclick="deleteUser(${user.id}, this.closest('tr'))">
-                    <i class="bi bi-trash-fill me-1"></i>Delete
-                </button>
+                <div class="d-flex gap-1 flex-wrap">
+                    ${user.role === 'voter'
+                        ? `<button class="btn btn-sm rounded-3 fw-semibold" style="background:#091c3d;color:#fff;font-size:.78rem;" onclick="openProfileModal(this.closest('tr'))"><i class="bi bi-person-badge me-1"></i>Set Profile</button>`
+                        : ''}
+                    <button class="btn btn-sm btn-outline-danger rounded-3"
+                            onclick="deleteUser(${user.id}, this.closest('tr'))">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
@@ -383,6 +488,120 @@
             errElem.classList.remove('d-none');
         })
         .finally(() => { btn.textContent = 'Create User'; });
+    }
+
+    // ─── Student profile modal ────────────────────────────────────────────────
+    const ALL_PROGRAMS = @json($programs);   // [{id, name, faculty_id}, ...]
+
+    function openProfileModal(row) {
+        const userId      = row.dataset.id;
+        const userName    = row.dataset.name;
+        const studentName = row.dataset.studentName || userName;
+        const regNo       = row.dataset.regNo       || '';
+        const facultyId   = row.dataset.facultyId   || '';
+        const programId   = row.dataset.programId   || '';
+
+        document.getElementById('profileUserId').value         = userId;
+        document.getElementById('profileName').value           = studentName;
+        document.getElementById('profileRegNo').value          = regNo;
+        document.getElementById('profileFacultyId').value      = facultyId;
+        document.getElementById('profileErr').classList.add('d-none');
+        document.getElementById('profileBtnText').innerHTML    = '<i class="bi bi-person-badge me-1"></i>Save Profile';
+        document.getElementById('profileModalSubtitle').textContent = userName;
+
+        filterProgramsByFaculty(programId);
+        $('#studentProfileModal').modal('show');
+    }
+
+    function filterProgramsByFaculty(preselect = null) {
+        const facultyId = document.getElementById('profileFacultyId').value;
+        const sel       = document.getElementById('profileProgramId');
+        sel.innerHTML   = '<option value="">— Select programme —</option>';
+
+        const filtered = ALL_PROGRAMS.filter(p => String(p.faculty_id) === String(facultyId));
+        filtered.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value       = p.id;
+            opt.textContent = p.name;
+            if (preselect && String(p.id) === String(preselect)) opt.selected = true;
+            sel.appendChild(opt);
+        });
+
+        if (!facultyId) {
+            sel.innerHTML = '<option value="">— Select faculty first —</option>';
+        } else if (filtered.length === 0) {
+            sel.innerHTML = '<option value="">No programmes for this faculty</option>';
+        }
+    }
+
+    function saveStudentProfile(event) {
+        event.preventDefault();
+        const errEl = document.getElementById('profileErr');
+        errEl.classList.add('d-none');
+
+        const userId    = document.getElementById('profileUserId').value;
+        const name      = document.getElementById('profileName').value;
+        const regNo     = document.getElementById('profileRegNo').value;
+        const facultyId = document.getElementById('profileFacultyId').value;
+        const programId = document.getElementById('profileProgramId').value;
+        const btn       = document.getElementById('profileBtnText');
+
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+
+        fetch(`/users/${userId}/student`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': CSRF,
+            },
+            body: JSON.stringify({ name, reg_no: regNo, faculty_id: facultyId, program_id: programId }),
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+                if (response.status === 422 && data?.errors) {
+                    const first = Object.values(data.errors)[0];
+                    throw new Error(Array.isArray(first) ? first[0] : first);
+                }
+                throw new Error(data?.message || `Error (${response.status})`);
+            }
+            return data;
+        })
+        .then(data => {
+            if (data.success) {
+                // Update the row's data attributes
+                const row = document.querySelector(`tr[data-id="${userId}"]`);
+                row.dataset.studentId   = data.student_id;
+                row.dataset.regNo       = data.student_reg_no;
+                row.dataset.studentName = data.student_name;
+                row.dataset.facultyId   = data.student_faculty_id;
+                row.dataset.programId   = data.student_program_id;
+
+                // Update the Student Profile cell
+                row.querySelector('.student-profile-cell').innerHTML = `
+                    <div class="small fw-semibold" style="color:#091c3d;">${escapeHtml(data.student_reg_no)}</div>
+                    <div class="small text-muted">${escapeHtml(data.student_faculty || '')}</div>
+                    <div class="small text-muted">${escapeHtml(data.student_program || '')}</div>
+                `;
+
+                // Update the Set Profile button label to "Edit Profile"
+                const profileBtn = row.querySelector('button[onclick*="openProfileModal"]');
+                if (profileBtn) {
+                    profileBtn.innerHTML = '<i class="bi bi-person-badge me-1"></i>Edit Profile';
+                }
+
+                $('#studentProfileModal').modal('hide');
+            }
+        })
+        .catch(err => {
+            errEl.textContent = err.message;
+            errEl.classList.remove('d-none');
+        })
+        .finally(() => {
+            btn.innerHTML = '<i class="bi bi-person-badge me-1"></i>Save Profile';
+        });
     }
 
     // ─── Delete user ──────────────────────────────────────────────────────────
