@@ -111,11 +111,10 @@ class ElectionAdminController extends Controller
                         'token'          => CandidateAcceptance::generateToken(),
                     ]);
 
-                    $emailTarget = $candidate->email ?: config('mail.from.address');
-
-                    Mail::to($emailTarget)->send(new CandidateResultMail($acceptance->load(['candidate', 'position'])));
-
-                    $acceptance->update(['notification_sent_at' => now()]);
+                    if ($candidate->email) {
+                        Mail::to($candidate->email)->send(new CandidateResultMail($acceptance->load(['candidate', 'position'])));
+                        $acceptance->update(['notification_sent_at' => now()]);
+                    }
                 }
             }
 
@@ -161,13 +160,16 @@ class ElectionAdminController extends Controller
             ];
         }
 
-        // Email every registered voter
-        $voters = \App\Models\User::role('voter')->get();
+        // Only email voters who have a real personal email address
+        $voters  = \App\Models\User::role('voter')->get();
+        $emailed = 0;
         foreach ($voters as $voter) {
-            Mail::to($voter->getMailAddress())->send(new VoterResultsMail($results, $election->title));
+            if (!$voter->personal_email) continue;
+            Mail::to($voter->personal_email)->send(new VoterResultsMail($results, $election->title));
+            $emailed++;
         }
 
-        return response()->json(['success' => true, 'message' => "Results emailed to {$voters->count()} voters."]);
+        return response()->json(['success' => true, 'message' => "Results emailed to {$emailed} voter(s) (out of {$voters->count()} total)."]);
     }
 
     // ── Live stats for dashboard widgets ──────────────────────────────────────

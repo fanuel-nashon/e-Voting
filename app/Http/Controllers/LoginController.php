@@ -38,8 +38,8 @@ class LoginController extends Controller
         /** @var User $user */
         $user = User::findOrFail(Auth::id());
 
-        // All roles require OTP except accounts listed in OTP_EXEMPT.
-        $exempt = in_array($user->email, self::OTP_EXEMPT);
+        // All roles require OTP except: listed accounts, or users with no personal email to send to.
+        $exempt = in_array($user->email, self::OTP_EXEMPT) || !$user->personal_email;
 
         if (!$exempt) {
             Auth::logout();
