@@ -82,6 +82,7 @@ Route::middleware('check.permission:manage_election')->group(function () {
     Route::get('/election', [ElectionAdminController::class, 'dashboard'])->name('election.dashboard');
     Route::post('/election/timeline', [ElectionAdminController::class, 'saveTimeline'])->name('election.timeline');
     Route::get('/election/logs', [ElectionAdminController::class, 'pollLogs'])->name('election.logs');
+    Route::get('/election/email-logs', [ElectionAdminController::class, 'pollEmailLogs'])->name('election.email-logs');
     Route::get('/election/stats', [ElectionAdminController::class, 'pollStats'])->name('election.stats');
     Route::post('/election/release', [ElectionAdminController::class, 'releaseResults'])->name('election.release');
     Route::post('/election/acceptances/{acceptance}/verify', [ElectionAdminController::class, 'verifyAcceptance'])->name('election.verify');

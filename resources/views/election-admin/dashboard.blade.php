@@ -156,6 +156,43 @@
           </div>
         </div>
 
+        <!-- Email Delivery Logs -->
+        <div class="col-12">
+          <div class="card border-0 shadow-sm rounded-4 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold mb-0" style="color:#091c3d;">
+                <i class="bi bi-envelope-exclamation me-2" style="color:#f5951b;"></i>Email Delivery Logs
+                <span class="badge rounded-pill ms-2" style="background:#dc3545;color:#fff;font-size:.75rem;display:none;" id="emailFailCount"></span>
+              </h5>
+              <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm rounded-3" id="emailLogFilter" style="width:auto;" onchange="loadEmailLogs()">
+                  <option value="failed">Failed only</option>
+                  <option value="all">All emails</option>
+                </select>
+                <button class="btn btn-sm btn-outline-secondary rounded-3" onclick="loadEmailLogs()">
+                  <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive" style="max-height:320px;overflow-y:auto;">
+              <table class="table table-sm align-middle mb-0" style="font-size:.83rem;">
+                <thead class="table-light sticky-top">
+                  <tr>
+                    <th class="py-2 px-3">Time</th>
+                    <th class="px-3">Type</th>
+                    <th class="px-3">Recipient</th>
+                    <th class="px-3">Status</th>
+                    <th class="px-3">Reason</th>
+                  </tr>
+                </thead>
+                <tbody id="emailLogTbody">
+                  <tr><td colspan="5" class="text-center text-muted py-3">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- Pending Voter Registrations -->
         <div class="col-12">
           <div class="card border-0 shadow-sm rounded-4 p-4">
@@ -633,5 +670,65 @@ function showAction(msg, success = null) {
   el.className = `mt-3 small ${success === null ? 'text-muted' : (success ? 'text-success' : 'text-danger')}`;
   el.classList.remove('d-none');
 }
+
+// ── Email delivery logs ────────────────────────────────────────────────────
+const EMAIL_TYPE_LABELS = {
+  voter_credentials: 'Voter Credentials',
+  voter_otp:         'OTP',
+  candidate_result:  'Candidate Result',
+  voter_result:      'Voter Result',
+  password_reset:    'Password Reset',
+};
+
+function loadEmailLogs() {
+  const status = document.getElementById('emailLogFilter').value;
+  const url    = `{{ route('election.email-logs') }}${status === 'failed' ? '?status=failed' : ''}`;
+  const tbody  = document.getElementById('emailLogTbody');
+
+  fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+    .then(r => r.json())
+    .then(data => {
+      const logs = data.logs || [];
+      tbody.innerHTML = '';
+
+      if (!logs.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No email logs found.</td></tr>';
+        document.getElementById('emailFailCount').style.display = 'none';
+        return;
+      }
+
+      const failCount = logs.filter(l => l.status === 'failed').length;
+      const badge = document.getElementById('emailFailCount');
+      if (failCount > 0) {
+        badge.textContent = failCount + ' failed';
+        badge.style.display = '';
+      } else {
+        badge.style.display = 'none';
+      }
+
+      logs.forEach(log => {
+        const tr = document.createElement('tr');
+        const isFailed = log.status === 'failed';
+        if (isFailed) tr.classList.add('table-danger');
+        tr.innerHTML = `
+          <td class="px-3 text-muted" style="white-space:nowrap;">${new Date(log.created_at).toLocaleString()}</td>
+          <td class="px-3"><span class="badge bg-secondary rounded-pill" style="font-size:.72rem;">${EMAIL_TYPE_LABELS[log.type] || log.type}</span></td>
+          <td class="px-3" style="font-size:.8rem;">${log.recipient}</td>
+          <td class="px-3">
+            ${isFailed
+              ? '<span class="badge bg-danger rounded-pill">Failed</span>'
+              : '<span class="badge bg-success rounded-pill">Sent</span>'}
+          </td>
+          <td class="px-3 text-muted" style="font-size:.78rem;max-width:260px;word-break:break-word;">${log.failure_reason || '—'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(() => {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-3">Could not load email logs.</td></tr>';
+    });
+}
+
+loadEmailLogs();
 </script>
 @endsection

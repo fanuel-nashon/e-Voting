@@ -10,6 +10,7 @@ use App\Models\ElectionSetting;
 use App\Models\Position;
 use App\Models\Student;
 use App\Models\Vote;
+use App\Models\EmailLog;
 use App\Models\VoteLog;
 use App\Models\VoterRegistration;
 use Illuminate\Http\Request;
@@ -112,8 +113,13 @@ class ElectionAdminController extends Controller
                     ]);
 
                     if ($candidate->email) {
-                        Mail::to($candidate->email)->send(new CandidateResultMail($acceptance->load(['candidate', 'position'])));
-                        $acceptance->update(['notification_sent_at' => now()]);
+                        try {
+                            Mail::to($candidate->email)->send(new CandidateResultMail($acceptance->load(['candidate', 'position'])));
+                            $acceptance->update(['notification_sent_at' => now()]);
+                            EmailLog::record('candidate_result', $candidate->email, 'sent');
+                        } catch (\Exception $e) {
+                            EmailLog::record('candidate_result', $candidate->email, 'failed', $e->getMessage());
+                        }
                     }
                 }
             }
@@ -165,11 +171,30 @@ class ElectionAdminController extends Controller
         $emailed = 0;
         foreach ($voters as $voter) {
             if (!$voter->personal_email) continue;
-            Mail::to($voter->personal_email)->send(new VoterResultsMail($results, $election->title));
-            $emailed++;
+            try {
+                Mail::to($voter->personal_email)->send(new VoterResultsMail($results, $election->title));
+                EmailLog::record('voter_result', $voter->personal_email, 'sent');
+                $emailed++;
+            } catch (\Exception $e) {
+                EmailLog::record('voter_result', $voter->personal_email, 'failed', $e->getMessage());
+            }
         }
 
         return response()->json(['success' => true, 'message' => "Results emailed to {$emailed} voter(s) (out of {$voters->count()} total)."]);
+    }
+
+    // ── Email delivery logs ───────────────────────────────────────────────────
+    public function pollEmailLogs(Request $request)
+    {
+        $query = EmailLog::orderByDesc('created_at')->limit(100);
+
+        if ($request->query('status') === 'failed') {
+            $query->where('status', 'failed');
+        }
+
+        $logs = $query->get(['id', 'type', 'recipient', 'status', 'failure_reason', 'created_at']);
+
+        return response()->json(['logs' => $logs]);
     }
 
     // ── Live stats for dashboard widgets ──────────────────────────────────────

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\VoterCredentialsMail;
+use App\Models\EmailLog;
 use App\Models\Program;
 use App\Models\Student;
 use App\Models\User;
@@ -98,18 +99,26 @@ class VoterRegistrationController extends Controller
         ]);
 
         // Send credentials to the student's PERSONAL email
-        Mail::to($registration->personal_email)->send(new VoterCredentialsMail(
-            voterName:     $registration->name,
-            email:         $registration->email,    // login email shown in the email body
-            plainPassword: $plainPassword,
-            faculty:       $registration->faculty->name,
-            program:       $registration->program->name,
-        ));
+        $emailSent = false;
+        try {
+            Mail::to($registration->personal_email)->send(new VoterCredentialsMail(
+                voterName:     $registration->name,
+                email:         $registration->email,    // login email shown in the email body
+                plainPassword: $plainPassword,
+                faculty:       $registration->faculty->name,
+                program:       $registration->program->name,
+            ));
+            EmailLog::record('voter_credentials', $registration->personal_email, 'sent');
+            $emailSent = true;
+        } catch (\Exception $e) {
+            EmailLog::record('voter_credentials', $registration->personal_email, 'failed', $e->getMessage());
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => "Approved. Credentials sent to {$registration->personal_email}.",
-        ]);
+        $message = $emailSent
+            ? "Approved. Credentials sent to {$registration->personal_email}."
+            : "Approved, but the credentials email could not be delivered to {$registration->personal_email}. Check email logs.";
+
+        return response()->json(['success' => true, 'message' => $message]);
     }
 
     public function reject(Request $request, VoterRegistration $registration)

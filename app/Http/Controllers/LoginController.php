@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\ResetPassword;
 use App\Mail\VoterOtpMail;
+use App\Models\EmailLog;
 use App\Models\OtpToken;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -47,7 +48,16 @@ class LoginController extends Controller
             $request->session()->regenerateToken();
 
             $otp = OtpToken::generate($user->id);
-            Mail::to($user->getMailAddress())->send(new VoterOtpMail($otp->token, $user->name));
+            try {
+                Mail::to($user->getMailAddress())->send(new VoterOtpMail($otp->token, $user->name));
+                EmailLog::record('voter_otp', $user->getMailAddress(), 'sent');
+            } catch (\Exception $e) {
+                EmailLog::record('voter_otp', $user->getMailAddress(), 'failed', $e->getMessage());
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Could not send OTP email. Please contact an administrator.',
+                ]);
+            }
 
             session(['otp_pending_user_id' => $user->id]);
 
@@ -140,9 +150,11 @@ class LoginController extends Controller
                 'email' => $validated['email'],
                 'token' => $token,
             ]));
+            EmailLog::record('password_reset', $validated['email'], 'sent');
 
             return response()->json(['status' => 'success', 'message' => 'Check your email']);
         } catch (\Exception $e) {
+            EmailLog::record('password_reset', $validated['email'] ?? '', 'failed', $e->getMessage());
             Log::error('Password reset error: ' . $e->getMessage());
             return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
         }
