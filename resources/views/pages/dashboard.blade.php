@@ -437,8 +437,17 @@
         });
     }
 
-    function deleteFaculty(id, row) {
-        if (!confirm('Are you sure you want to delete this faculty?')) return;
+    async function deleteFaculty(id, row) {
+        const { isConfirmed } = await Swal.fire({
+            title: 'Delete Faculty',
+            text: 'Are you sure you want to delete this faculty?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete',
+        });
+        if (!isConfirmed) return;
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
         fetch(`/faculties/${id}`, {
@@ -463,7 +472,7 @@
                 });
             }
         })
-        .catch(err => alert('Delete failed: ' + err.message));
+        .catch(err => Swal.fire({ icon: 'error', title: 'Delete failed', text: err.message }));
     }
 
     function loadFaculties() {
@@ -807,8 +816,17 @@
         });
     }
 
-    function deleteProgram(id, row) {
-        if (!confirm('Are you sure you want to delete this program?')) return;
+    async function deleteProgram(id, row) {
+        const { isConfirmed } = await Swal.fire({
+            title: 'Delete Program',
+            text: 'Are you sure you want to delete this program?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete',
+        });
+        if (!isConfirmed) return;
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
         fetch(`/programs/${id}`, {
@@ -832,7 +850,7 @@
                 });
             }
         })
-        .catch(err => alert('Delete failed: ' + err.message));
+        .catch(err => Swal.fire({ icon: 'error', title: 'Delete failed', text: err.message }));
     }
 
     // Auto-open a section when arriving from another page via ?section= query param

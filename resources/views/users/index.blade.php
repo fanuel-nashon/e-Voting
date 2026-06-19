@@ -203,7 +203,7 @@
                                         @if($user['id'] !== Auth::id())
                                         <button class="btn btn-sm btn-outline-danger rounded-3"
                                                 onclick="deleteUser({{ $user['id'] }}, this.closest('tr'))">
-                                            <i class="bi bi-trash-fill"></i>
+                                            <i class="bi bi-trash-fill me-1"></i>Delete
                                         </button>
                                         @else
                                         <span class="text-muted small">You</span>
@@ -605,8 +605,17 @@
     }
 
     // ─── Delete user ──────────────────────────────────────────────────────────
-    function deleteUser(id, row) {
-        if (!confirm('Are you sure you want to delete this user?')) return;
+    async function deleteUser(id, row) {
+        const { isConfirmed } = await Swal.fire({
+            title: 'Delete User',
+            text: 'Are you sure you want to delete this user?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete',
+        });
+        if (!isConfirmed) return;
 
         fetch(`/users/${id}`, {
             method: 'DELETE',
@@ -628,7 +637,7 @@
                 updateStats();
             }
         })
-        .catch(err => alert('Delete failed: ' + err.message));
+        .catch(err => Swal.fire({ icon: 'error', title: 'Delete failed', text: err.message }));
     }
 </script>
 

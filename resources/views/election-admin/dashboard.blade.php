@@ -184,7 +184,17 @@
                 </thead>
                 <tbody id="pendingRegTbody">
                   @forelse($pendingRegistrations as $reg)
-                  <tr id="reg-row-{{ $reg->id }}">
+                  <tr id="reg-row-{{ $reg->id }}"
+                      data-reg-id="{{ $reg->id }}"
+                      data-reg-name="{{ $reg->name }}"
+                      data-reg-number="{{ $reg->reg_number }}"
+                      data-reg-year="{{ $reg->reg_year }}"
+                      data-reg-program="{{ $reg->program->name }}"
+                      data-reg-faculty="{{ $reg->faculty->name }}"
+                      data-reg-email="{{ $reg->email }}"
+                      data-reg-personal-email="{{ $reg->personal_email ?? '' }}"
+                      data-reg-submitted="{{ $reg->created_at->format('d M Y, H:i') }}"
+                      data-reg-photo="{{ $reg->photo ? asset('storage/'.$reg->photo) : '' }}">
                     <td class="px-4">
                       @if($reg->photo)
                       <img src="{{ asset('storage/'.$reg->photo) }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #e9ecef;">
@@ -192,12 +202,18 @@
                       <div style="width:40px;height:40px;border-radius:50%;background:#e9ecef;display:flex;align-items:center;justify-content:center;"><i class="bi bi-person-fill text-secondary"></i></div>
                       @endif
                     </td>
-                    <td class="px-4 fw-semibold text-dark">{{ $reg->name }}</td>
+                    <td class="px-4 fw-semibold">
+                      <a href="#" class="text-decoration-none" style="color:#091c3d;" onclick="openRegModal(this.closest('tr'));return false;">{{ $reg->name }}</a>
+                    </td>
                     <td class="px-4 text-muted small">{{ $reg->reg_number }}</td>
                     <td class="px-4 small">{{ $reg->program->name }}</td>
                     <td class="px-4 small text-muted">{{ $reg->faculty->name }}</td>
                     <td class="px-4 small text-muted">{{ $reg->created_at->format('d M Y') }}</td>
                     <td class="px-4">
+                      <button class="btn btn-sm btn-outline-secondary rounded-3 me-1"
+                              onclick="openRegModal(this.closest('tr'))">
+                        <i class="bi bi-eye me-1"></i>View
+                      </button>
                       <button class="btn btn-sm btn-success rounded-3 me-1"
                               onclick="approveReg({{ $reg->id }}, this)">
                         <i class="bi bi-check-lg me-1"></i>Approve
@@ -281,6 +297,64 @@
 
       </div>
     </main>
+  </div>
+</div>
+
+<!-- Voter Registration Detail Modal -->
+<div class="modal fade" id="regDetailModal" tabindex="-1" aria-labelledby="regDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:520px;">
+    <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+      <div class="modal-header border-0 px-4 pt-4 pb-2" style="background:#091c3d;">
+        <h5 class="modal-title fw-bold text-white" id="regDetailModalLabel">
+          <i class="bi bi-person-badge me-2" style="color:#f5951b;"></i>Voter Registration Details
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body px-4 py-4">
+        <div class="d-flex align-items-center gap-4 mb-4">
+          <div id="modalPhotoWrap" style="width:100px;height:100px;flex-shrink:0;border-radius:50%;overflow:hidden;border:3px solid #e9ecef;background:#e9ecef;display:flex;align-items:center;justify-content:center;">
+            <i class="bi bi-person-fill text-secondary fs-1" id="modalPhotoPlaceholder"></i>
+          </div>
+          <div>
+            <div class="fw-bold fs-5" id="modalName" style="color:#091c3d;"></div>
+            <div class="text-muted small" id="modalRegNumber"></div>
+            <div class="text-muted small" id="modalRegYear"></div>
+          </div>
+        </div>
+        <hr class="my-3">
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:.7rem;letter-spacing:.05em;">Programme</div>
+            <div class="fw-medium small" id="modalProgram"></div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:.7rem;letter-spacing:.05em;">Faculty</div>
+            <div class="fw-medium small" id="modalFaculty"></div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:.7rem;letter-spacing:.05em;">Institutional Email</div>
+            <div class="small" id="modalEmail"></div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:.7rem;letter-spacing:.05em;">Personal Email</div>
+            <div class="small" id="modalPersonalEmail"></div>
+          </div>
+          <div class="col-12">
+            <div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:.7rem;letter-spacing:.05em;">Submitted</div>
+            <div class="small text-muted" id="modalSubmitted"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 px-4 pb-4 pt-2 gap-2">
+        <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-outline-danger rounded-3" id="modalRejectBtn">
+          <i class="bi bi-x-lg me-1"></i>Reject
+        </button>
+        <button type="button" class="btn btn-success rounded-3" id="modalApproveBtn">
+          <i class="bi bi-check-lg me-1"></i>Approve
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -374,8 +448,17 @@ function saveTimeline(e) {
 }
 
 // ── Release results ────────────────────────────────────────────────────────
-function releaseResults() {
-  if (!confirm('Release results and email all candidates now?')) return;
+async function releaseResults() {
+  const { isConfirmed } = await Swal.fire({
+    title: 'Release Results',
+    text: 'This will email results to all candidates now.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#091c3d',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Yes, release',
+  });
+  if (!isConfirmed) return;
   showAction('Releasing results…');
   fetch("{{ route('election.release') }}", {
     method: 'POST',
@@ -387,8 +470,17 @@ function releaseResults() {
 }
 
 // ── Publish results ────────────────────────────────────────────────────────
-function publishResults() {
-  if (!confirm('Email final results to all voters now?')) return;
+async function publishResults() {
+  const { isConfirmed } = await Swal.fire({
+    title: 'Publish Results',
+    text: 'This will email final results to all voters now.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#091c3d',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Yes, publish',
+  });
+  if (!isConfirmed) return;
   showAction('Sending voter emails…');
   fetch("{{ route('election.publish') }}", {
     method: 'POST',
@@ -415,9 +507,58 @@ function verifyAcceptance(id, btn) {
   });
 }
 
+// ── Voter registration detail modal ───────────────────────────────────────
+function openRegModal(row) {
+  const d = row.dataset;
+  document.getElementById('modalName').textContent       = d.regName;
+  document.getElementById('modalRegNumber').textContent  = d.regNumber;
+  document.getElementById('modalRegYear').textContent    = 'Year ' + d.regYear;
+  document.getElementById('modalProgram').textContent    = d.regProgram;
+  document.getElementById('modalFaculty').textContent    = d.regFaculty;
+  document.getElementById('modalEmail').textContent      = d.regEmail || '—';
+  document.getElementById('modalPersonalEmail').textContent = d.regPersonalEmail || '—';
+  document.getElementById('modalSubmitted').textContent  = d.regSubmitted;
+
+  const photoWrap = document.getElementById('modalPhotoWrap');
+  const placeholder = document.getElementById('modalPhotoPlaceholder');
+  const existing = photoWrap.querySelector('img');
+  if (existing) existing.remove();
+
+  if (d.regPhoto) {
+    placeholder.style.display = 'none';
+    const img = document.createElement('img');
+    img.src = d.regPhoto;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+    photoWrap.appendChild(img);
+  } else {
+    placeholder.style.display = '';
+  }
+
+  const id = parseInt(d.regId);
+  document.getElementById('modalApproveBtn').onclick = function() {
+    bootstrap.Modal.getInstance(document.getElementById('regDetailModal')).hide();
+    approveReg(id, document.querySelector(`#reg-row-${id} .btn-success`));
+  };
+  document.getElementById('modalRejectBtn').onclick = function() {
+    bootstrap.Modal.getInstance(document.getElementById('regDetailModal')).hide();
+    rejectReg(id, document.querySelector(`#reg-row-${id} .btn-outline-danger`));
+  };
+
+  new bootstrap.Modal(document.getElementById('regDetailModal')).show();
+}
+
 // ── Voter registration approvals ──────────────────────────────────────────
-function approveReg(id, btn) {
-  if (!confirm('Approve this voter registration and send their login credentials?')) return;
+async function approveReg(id, btn) {
+  const { isConfirmed } = await Swal.fire({
+    title: 'Approve Registration',
+    text: 'This will approve the voter and send their login credentials.',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#198754',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Yes, approve',
+  });
+  if (!isConfirmed) return;
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
@@ -434,20 +575,30 @@ function approveReg(id, btn) {
     } else {
       btn.disabled = false;
       btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Approve';
-      alert(data.message);
+      Swal.fire({ icon: 'error', title: 'Error', text: data.message });
     }
   });
 }
 
-function rejectReg(id, btn) {
-  const reason = prompt('Reason for rejection (optional):');
-  if (reason === null) return;
+async function rejectReg(id, btn) {
+  const { isConfirmed, value: reason } = await Swal.fire({
+    title: 'Reject Registration',
+    input: 'textarea',
+    inputLabel: 'Reason for rejection (optional)',
+    inputPlaceholder: 'Enter reason…',
+    inputAttributes: { rows: 3 },
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Reject',
+  });
+  if (!isConfirmed) return;
   btn.disabled = true;
 
   fetch(`/voter-registrations/${id}/reject`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF, 'X-Requested-With': 'XMLHttpRequest' },
-    body: JSON.stringify({ reason })
+    body: JSON.stringify({ reason: reason || '' })
   })
   .then(r => r.json())
   .then(data => {
@@ -457,7 +608,7 @@ function rejectReg(id, btn) {
       showAction(data.message, true);
     } else {
       btn.disabled = false;
-      alert(data.message);
+      Swal.fire({ icon: 'error', title: 'Error', text: data.message });
     }
   });
 }

@@ -417,7 +417,7 @@
                         <i class="bi bi-pencil-fill"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger rounded-3" onclick="deleteCandidate(${c.id}, this.closest('tr'))">
-                        <i class="bi bi-trash-fill"></i>
+                        <i class="bi bi-trash-fill me-1"></i>Delete
                     </button>
                 </td>
             `;
@@ -525,8 +525,17 @@
     }
 
     // ─── Delete ──────────────────────────────────────────────────────────────
-    function deleteCandidate(id, row) {
-        if (!confirm('Delete this candidate? This action cannot be undone.')) return;
+    async function deleteCandidate(id, row) {
+        const { isConfirmed } = await Swal.fire({
+            title: 'Delete Candidate',
+            text: 'This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete',
+        });
+        if (!isConfirmed) return;
 
         fetch(`/candidates/${id}`, {
             method: 'DELETE',
@@ -543,7 +552,7 @@
                 renderCandidates();
             }
         })
-        .catch(err => alert('Delete failed: ' + err.message));
+        .catch(err => Swal.fire({ icon: 'error', title: 'Delete failed', text: err.message }));
     }
 
     // ─── Init ────────────────────────────────────────────────────────────────
