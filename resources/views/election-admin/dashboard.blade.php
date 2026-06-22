@@ -15,9 +15,13 @@
       </div>
       <hr class="opacity-25 mb-4">
       <ul class="nav flex-column gap-2 w-100">
+        @if(auth()->user()->hasRole('admin'))
         <li><a href="{{ route('dashboard') }}" class="nav-link text-white d-flex align-items-center px-3 py-2 rounded-3 hover-link"><i class="bi bi-speedometer2 me-3 fs-5"></i>Admin Console</a></li>
+        @endif
         <li><a href="{{ route('election.dashboard') }}" class="nav-link text-white d-flex align-items-center px-3 py-2 rounded-3 active-link"><i class="bi bi-broadcast me-3 fs-5"></i>Election Dashboard</a></li>
+        @if(auth()->user()->hasRole('admin'))
         <li><a href="{{ route('users.index') }}" class="nav-link text-white d-flex align-items-center px-3 py-2 rounded-3 hover-link"><i class="bi bi-people me-3 fs-5"></i>Users / Voters</a></li>
+        @endif
         <li><a href="{{ route('reports.index') }}" class="nav-link text-white d-flex align-items-center px-3 py-2 rounded-3 hover-link"><i class="bi bi-bar-chart-line me-3 fs-5"></i>Reports</a></li>
       </ul>
     </div>
