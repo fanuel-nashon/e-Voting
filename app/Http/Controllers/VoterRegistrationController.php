@@ -25,7 +25,6 @@ class VoterRegistrationController extends Controller
     {
         $request->validate([
             'name'           => 'required|string|max:191',
-            'personal_email' => 'required|email|max:191|unique:voter_registrations,personal_email',
             'reg_number'     => 'required|string|max:50|unique:voter_registrations,reg_number|unique:students,reg_no',
             'program_id'     => 'required|exists:programs,id',
             'photo'          => 'required|image|mimes:jpg,jpeg,png|max:2048',
@@ -39,7 +38,6 @@ class VoterRegistrationController extends Controller
         VoterRegistration::create([
             'name'           => $request->name,
             'email'          => $loginEmail,
-            'personal_email' => $request->personal_email,
             'reg_number'     => strtoupper(trim($request->reg_number)),
             'reg_year'       => $regYear,
             'program_id'     => $program->id,
@@ -76,11 +74,10 @@ class VoterRegistrationController extends Controller
         $plainPassword = Str::random(10);
 
         $user = User::create([
-            'name'           => $registration->name,
-            'email'          => $registration->email,          // login email (generated)
-            'personal_email' => $registration->personal_email, // real email for communications
-            'password'       => Hash::make($plainPassword),
-            'faculty_id'     => $registration->faculty_id,
+            'name'       => $registration->name,
+            'email'      => $registration->email,
+            'password'   => Hash::make($plainPassword),
+            'faculty_id' => $registration->faculty_id,
         ]);
         $user->assignRole('voter');
 
@@ -98,25 +95,25 @@ class VoterRegistrationController extends Controller
             'processed_at' => now(),
         ]);
 
-        // Send credentials to the student's PERSONAL email
+        // Send credentials to the student's generated university email
         $emailSent = false;
         try {
-            Mail::to($registration->personal_email)->send(new VoterCredentialsMail(
+            Mail::to($registration->email)->send(new VoterCredentialsMail(
                 voterName:     $registration->name,
-                email:         $registration->email,    // login email shown in the email body
+                email:         $registration->email,
                 plainPassword: $plainPassword,
                 faculty:       $registration->faculty->name,
                 program:       $registration->program->name,
             ));
-            EmailLog::record('voter_credentials', $registration->personal_email, 'sent');
+            EmailLog::record('voter_credentials', $registration->email, 'sent');
             $emailSent = true;
         } catch (\Exception $e) {
-            EmailLog::record('voter_credentials', $registration->personal_email, 'failed', $e->getMessage());
+            EmailLog::record('voter_credentials', $registration->email, 'failed', $e->getMessage());
         }
 
         $message = $emailSent
-            ? "Approved. Credentials sent to {$registration->personal_email}."
-            : "Approved, but the credentials email could not be delivered to {$registration->personal_email}. Check email logs.";
+            ? "Approved. Credentials sent to {$registration->email}."
+            : "Approved, but the credentials email could not be delivered to {$registration->email}. Check email logs.";
 
         return response()->json(['success' => true, 'message' => $message]);
     }

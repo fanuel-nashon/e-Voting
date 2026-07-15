@@ -39,8 +39,8 @@ class LoginController extends Controller
         /** @var User $user */
         $user = User::findOrFail(Auth::id());
 
-        // All roles require OTP except: listed accounts, or users with no personal email to send to.
-        $exempt = in_array($user->email, self::OTP_EXEMPT) || !$user->personal_email;
+        // All roles require OTP except the listed break-glass accounts.
+        $exempt = in_array($user->email, self::OTP_EXEMPT);
 
         if (!$exempt) {
             Auth::logout();
@@ -49,10 +49,10 @@ class LoginController extends Controller
 
             $otp = OtpToken::generate($user->id);
             try {
-                Mail::to($user->getMailAddress())->send(new VoterOtpMail($otp->token, $user->name));
-                EmailLog::record('voter_otp', $user->getMailAddress(), 'sent');
+                Mail::to($user->email)->send(new VoterOtpMail($otp->token, $user->name));
+                EmailLog::record('voter_otp', $user->email, 'sent');
             } catch (\Exception $e) {
-                EmailLog::record('voter_otp', $user->getMailAddress(), 'failed', $e->getMessage());
+                EmailLog::record('voter_otp', $user->email, 'failed', $e->getMessage());
                 return response()->json([
                     'status'  => 'error',
                     'message' => 'Could not send OTP email. Please contact an administrator.',

@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 class VoterRegistration extends Model
 {
     protected $fillable = [
-        'name', 'email', 'personal_email', 'reg_number', 'reg_year',
+        'name', 'email', 'reg_number', 'reg_year',
         'program_id', 'faculty_id', 'photo',
         'status', 'processed_by', 'processed_at', 'rejection_reason',
     ];
+
+    public const EMAIL_DOMAIN = 'mustudent.ac.tz';
 
     protected $casts = [
         'processed_at' => 'datetime',
@@ -33,13 +35,14 @@ class VoterRegistration extends Model
         $firstName = preg_replace('/[^a-z]/', '', $parts[0] ?? 'student');
         $lastName  = preg_replace('/[^a-z]/', '', $parts[1] ?? '');
         $base      = $lastName ? "{$firstName}.{$lastName}" : $firstName;
+        $shortYear = substr((string) $year, -2);
 
-        $email = "{$base}.{$year}@mzumbeuniversity.com";
+        $email = "{$base}{$shortYear}@" . self::EMAIL_DOMAIN;
 
         // Ensure uniqueness
         $i = 2;
         while (User::where('email', $email)->exists() || VoterRegistration::where('email', $email)->exists()) {
-            $email = "{$base}.{$year}.{$i}@mzumbeuniversity.com";
+            $email = "{$base}{$shortYear}.{$i}@" . self::EMAIL_DOMAIN;
             $i++;
         }
 

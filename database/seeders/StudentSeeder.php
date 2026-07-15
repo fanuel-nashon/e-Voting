@@ -7,6 +7,7 @@ use App\Models\Faculty;
 use App\Models\Program;
 use App\Models\Student;
 use App\Models\User;
+use App\Models\VoterRegistration;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
@@ -35,8 +36,7 @@ class StudentSeeder extends Seeder
                 $last  = $lastNames[array_rand($lastNames)];
                 $name  = "$first $last";
                 $regNo = 'STD/' . str_pad($counter, 4, '0', STR_PAD_LEFT) . '/2024';
-                $regNoClean = 'std' . str_pad($counter, 4, '0', STR_PAD_LEFT);
-                $email = $regNoClean . '@students.university.ac.tz';
+                $email = VoterRegistration::buildEmail($name, 2024);
 
                 // Create user
                 $user = User::firstOrCreate(

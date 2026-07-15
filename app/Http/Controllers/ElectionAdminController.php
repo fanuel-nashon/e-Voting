@@ -166,17 +166,15 @@ class ElectionAdminController extends Controller
             ];
         }
 
-        // Only email voters who have a real personal email address
         $voters  = \App\Models\User::role('voter')->get();
         $emailed = 0;
         foreach ($voters as $voter) {
-            if (!$voter->personal_email) continue;
             try {
-                Mail::to($voter->personal_email)->send(new VoterResultsMail($results, $election->title));
-                EmailLog::record('voter_result', $voter->personal_email, 'sent');
+                Mail::to($voter->email)->send(new VoterResultsMail($results, $election->title));
+                EmailLog::record('voter_result', $voter->email, 'sent');
                 $emailed++;
             } catch (\Exception $e) {
-                EmailLog::record('voter_result', $voter->personal_email, 'failed', $e->getMessage());
+                EmailLog::record('voter_result', $voter->email, 'failed', $e->getMessage());
             }
         }
 

@@ -6,6 +6,7 @@ use App\Models\ElectionSetting;
 use App\Models\Program;
 use App\Models\Student;
 use App\Models\User;
+use App\Models\VoterRegistration;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
@@ -25,7 +26,6 @@ class DemoSeeder extends Seeder
 {
     private const VOTER_COUNT = 80;
     private const DEMO_YEAR   = '2024';
-    private const EMAIL_DOMAIN = 'mzumbeuniversity.com';
 
     private const FIRST_NAMES = [
         'Amina','Baraka','Celestine','Dalila','Emmanuel','Fatuma','Grace',
@@ -87,15 +87,7 @@ class DemoSeeder extends Seeder
         $skipped   = 0;
 
         for ($i = 1; $i <= self::VOTER_COUNT; $i++) {
-            $email = "demo.voter.{$i}@" . self::EMAIL_DOMAIN;
-
-            if (User::where('email', $email)->exists()) {
-                $skipped++;
-                continue;
-            }
-
             $program = $programs[($i - 1) % $programs->count()];
-            $name    = $this->makeName($i);
             $regNo   = sprintf(
                 'DEMO/%s/%s/%03d',
                 strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $program->name), 0, 4)),
@@ -103,12 +95,19 @@ class DemoSeeder extends Seeder
                 $i
             );
 
+            if (Student::where('reg_no', $regNo)->exists()) {
+                $skipped++;
+                continue;
+            }
+
+            $name  = $this->makeName($i);
+            $email = VoterRegistration::buildEmail($name, (int) self::DEMO_YEAR);
+
             $user = User::create([
-                'name'           => $name,
-                'email'          => $email,
-                'personal_email' => $email,
-                'password'       => Hash::make('demo1234'),
-                'faculty_id'     => $program->faculty_id,
+                'name'       => $name,
+                'email'      => $email,
+                'password'   => Hash::make('demo1234'),
+                'faculty_id' => $program->faculty_id,
             ]);
             $user->assignRole($voterRole);
 

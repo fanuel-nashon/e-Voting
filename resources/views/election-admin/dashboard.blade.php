@@ -233,7 +233,6 @@
                       data-reg-program="{{ $reg->program->name }}"
                       data-reg-faculty="{{ $reg->faculty->name }}"
                       data-reg-email="{{ $reg->email }}"
-                      data-reg-personal-email="{{ $reg->personal_email ?? '' }}"
                       data-reg-submitted="{{ $reg->created_at->format('d M Y, H:i') }}"
                       data-reg-photo="{{ $reg->photo ? asset('storage/'.$reg->photo) : '' }}">
                     <td class="px-4">
@@ -373,12 +372,8 @@
             <div class="fw-medium small" id="modalFaculty"></div>
           </div>
           <div class="col-6">
-            <div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:.7rem;letter-spacing:.05em;">Institutional Email</div>
+            <div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:.7rem;letter-spacing:.05em;">Account Email</div>
             <div class="small" id="modalEmail"></div>
-          </div>
-          <div class="col-6">
-            <div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:.7rem;letter-spacing:.05em;">Personal Email</div>
-            <div class="small" id="modalPersonalEmail"></div>
           </div>
           <div class="col-12">
             <div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:.7rem;letter-spacing:.05em;">Submitted</div>
@@ -557,7 +552,6 @@ function openRegModal(row) {
   document.getElementById('modalProgram').textContent    = d.regProgram;
   document.getElementById('modalFaculty').textContent    = d.regFaculty;
   document.getElementById('modalEmail').textContent      = d.regEmail || '—';
-  document.getElementById('modalPersonalEmail').textContent = d.regPersonalEmail || '—';
   document.getElementById('modalSubmitted').textContent  = d.regSubmitted;
 
   const photoWrap = document.getElementById('modalPhotoWrap');

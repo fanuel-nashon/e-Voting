@@ -11,7 +11,7 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles;
 
-    protected $fillable = ['name', 'email', 'personal_email', 'password', 'faculty_id'];
+    protected $fillable = ['name', 'email', 'password', 'faculty_id'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -21,12 +21,6 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
         ];
-    }
-
-    /** Returns personal email when available, falls back to login email. */
-    public function getMailAddress(): string
-    {
-        return $this->personal_email ?? $this->email;
     }
 
     public function student()   { return $this->hasOne(Student::class); }

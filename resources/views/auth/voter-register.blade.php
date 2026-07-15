@@ -18,11 +18,11 @@
       <div id="successState" class="d-none text-center py-2">
         <div style="font-size:3rem;color:#198754;margin-bottom:1rem;"><i class="bi bi-check-circle-fill"></i></div>
         <h6 class="fw-bold text-dark mb-2">Registration Submitted!</h6>
-        <p class="text-muted small mb-3">Your application is pending approval from your Faculty Election Admin. Once approved, your login credentials will be sent to your personal email.</p>
+        <p class="text-muted small mb-3">Your application is pending approval from your Faculty Election Admin. Once approved, your login credentials will be sent to the email below.</p>
         <div class="p-3 rounded-3 small" style="background:#f0f4ff;color:#091c3d;line-height:1.8;">
-          <div><strong>Login email (system-generated):</strong></div>
+          <div><strong>Your account email (system-generated):</strong></div>
           <div id="assignedEmail" class="fw-bold" style="color:#f5951b;"></div>
-          <div class="mt-2 text-muted">Credentials will be delivered to your personal email.</div>
+          <div class="mt-2 text-muted">This is also where your OTP codes and election notifications will be sent.</div>
         </div>
         <a href="{{ route('login') }}" class="btn auth-btn-primary w-100 mt-4">Back to Sign In</a>
       </div>
@@ -41,23 +41,13 @@
         </div>
 
         <div class="mb-3">
-          <label class="form-label fw-semibold text-dark small">Personal Email Address</label>
-          <div class="input-group">
-            <span class="input-group-text auth-input-icon"><i class="bi bi-envelope"></i></span>
-            <input class="form-control auth-input" type="email" name="personal_email"
-                   placeholder="your.real@gmail.com" required>
-          </div>
-          <div class="form-text">Used to receive all notifications, OTPs, and results. Your login email will be auto-generated separately.</div>
-        </div>
-
-        <div class="mb-3">
           <label class="form-label fw-semibold text-dark small">Registration Number</label>
           <div class="input-group">
             <span class="input-group-text auth-input-icon"><i class="bi bi-hash"></i></span>
             <input class="form-control auth-input" type="text" name="reg_number" id="regNumber"
                    placeholder="e.g. MZ/ICT/2022/001" required>
           </div>
-          <div class="form-text">Must contain your enrolment year (e.g. 2022). Your login email will be generated automatically.</div>
+          <div class="form-text">Must contain your enrolment year (e.g. 2022). Your account email will be generated automatically from your name and enrolment year.</div>
         </div>
 
         <div class="mb-3">
