@@ -19,14 +19,14 @@ use Illuminate\Support\Facades\Route;
 */
 Route::middleware('guest')->group(function () {
     Route::view('/', 'auth.login')->name('login');
-    Route::post('/login.submit', [LoginController::class, 'login'])->name('login.submit');
+    Route::post('/login.submit', [LoginController::class, 'login'])->name('login.submit')->middleware('throttle:6,1');
 
     Route::view('/password/reset', 'auth.reset-password')->name('password.reset');
-    Route::post('/reset-password', [LoginController::class, 'resetPassword'])->name('reset.password');
+    Route::post('/reset-password', [LoginController::class, 'resetPassword'])->name('reset.password')->middleware('throttle:3,1');
 
     Route::view('/auth-token', 'auth.token')->name('token');
     Route::view('/enter-token', 'auth.enter-token')->name('enterToken');
-    Route::post('/change-password', [LoginController::class, 'changePassword'])->name('change.password');
+    Route::post('/change-password', [LoginController::class, 'changePassword'])->name('change.password')->middleware('throttle:6,1');
 
     // Voter self-registration
     Route::get('/register/voter', [VoterRegistrationController::class, 'showForm'])->name('voter.register');
@@ -34,7 +34,7 @@ Route::middleware('guest')->group(function () {
 
     // OTP step (session-gated, not auth-gated)
     Route::get('/voter/otp', [LoginController::class, 'otpForm'])->name('voter.otp');
-    Route::post('/voter/otp', [LoginController::class, 'verifyOtp'])->name('voter.otp.verify');
+    Route::post('/voter/otp', [LoginController::class, 'verifyOtp'])->name('voter.otp.verify')->middleware('throttle:6,1');
 });
 
 /*

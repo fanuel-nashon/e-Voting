@@ -103,7 +103,12 @@ class LoginController extends Controller
             return response()->json(['status' => 'error', 'message' => 'OTP expired. Please log in again to receive a new one.']);
         }
 
-        if ($otpRecord->token !== $request->otp) {
+        if ($otpRecord->isLocked()) {
+            return response()->json(['status' => 'error', 'message' => 'Too many incorrect attempts. Please log in again to receive a new code.']);
+        }
+
+        if (!hash_equals($otpRecord->token, $request->otp)) {
+            $otpRecord->increment('attempts');
             return response()->json(['status' => 'error', 'message' => 'Incorrect OTP. Please try again.']);
         }
 
@@ -140,10 +145,10 @@ class LoginController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'Email not found']);
             }
 
-            $token = rand(100000, 999999);
+            $token = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             DB::table('password_reset_tokens')->updateOrInsert(
                 ['email' => $validated['email']],
-                ['token' => $token, 'created_at' => now()]
+                ['token' => hash('sha256', $token), 'created_at' => now()]
             );
 
             Mail::to($validated['email'])->send(new ResetPassword((object)[
@@ -160,13 +165,32 @@ class LoginController extends Controller
         }
     }
 
+    private const RESET_TOKEN_TTL_MINUTES = 30;
+
+    private function findValidResetToken(string $rawToken): ?object
+    {
+        $tokenRecord = DB::table('password_reset_tokens')
+            ->where('token', hash('sha256', $rawToken))
+            ->first();
+
+        if (!$tokenRecord) {
+            return null;
+        }
+
+        if (now()->diffInMinutes($tokenRecord->created_at) > self::RESET_TOKEN_TTL_MINUTES) {
+            DB::table('password_reset_tokens')->where('email', $tokenRecord->email)->delete();
+            return null;
+        }
+
+        return $tokenRecord;
+    }
+
     public function changePassword(Request $request)
     {
         if (!$request->password) {
             $request->validate(['token' => 'required|string']);
 
-            $tokenRecord = DB::table('password_reset_tokens')->where('token', $request->token)->first();
-            if (!$tokenRecord) {
+            if (!$this->findValidResetToken($request->token)) {
                 return response()->json(['status' => 'error', 'message' => 'Invalid or expired token']);
             }
             return response()->json(['status' => 'token_valid']);
@@ -174,13 +198,13 @@ class LoginController extends Controller
 
         $request->validate(['password' => 'required|min:6|confirmed']);
 
-        $tokenRecord = DB::table('password_reset_tokens')->where('token', $request->token)->first();
+        $tokenRecord = $this->findValidResetToken($request->token);
         if (!$tokenRecord) {
             return response()->json(['status' => 'error', 'message' => 'Invalid or expired token']);
         }
 
         User::where('email', $tokenRecord->email)->update(['password' => Hash::make($request->password)]);
-        DB::table('password_reset_tokens')->where('token', $request->token)->delete();
+        DB::table('password_reset_tokens')->where('email', $tokenRecord->email)->delete();
 
         return response()->json(['status' => 'password_reset', 'message' => 'Password successfully updated']);
     }

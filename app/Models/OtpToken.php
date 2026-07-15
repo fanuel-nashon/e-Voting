@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class OtpToken extends Model
 {
-    protected $fillable = ['user_id', 'token', 'expires_at', 'used_at'];
+    public const MAX_ATTEMPTS = 5;
+
+    protected $fillable = ['user_id', 'token', 'attempts', 'expires_at', 'used_at'];
 
     protected $casts = [
         'expires_at' => 'datetime',
@@ -23,6 +25,11 @@ class OtpToken extends Model
     public function isUsed(): bool
     {
         return !is_null($this->used_at);
+    }
+
+    public function isLocked(): bool
+    {
+        return $this->attempts >= self::MAX_ATTEMPTS;
     }
 
     public static function generate(int $userId): self
