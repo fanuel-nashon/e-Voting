@@ -29,23 +29,46 @@ class VoterRegistration extends Model
         return (int) ($m[0] ?? date('Y'));
     }
 
-    public static function buildEmail(string $name, int $year): string
+    public static function nameSlug(string $name): string
     {
         $parts     = explode(' ', strtolower(trim($name)));
         $firstName = preg_replace('/[^a-z]/', '', $parts[0] ?? 'student');
         $lastName  = preg_replace('/[^a-z]/', '', $parts[1] ?? '');
-        $base      = $lastName ? "{$firstName}.{$lastName}" : $firstName;
-        $shortYear = substr((string) $year, -2);
 
-        $email = "{$base}{$shortYear}@" . self::EMAIL_DOMAIN;
+        return $lastName ? "{$firstName}.{$lastName}" : $firstName;
+    }
+
+    public static function expectedEmailBase(string $name, int $year): string
+    {
+        return self::nameSlug($name) . substr((string) $year, -2);
+    }
+
+    public static function buildEmail(string $name, int $year): string
+    {
+        $base  = self::expectedEmailBase($name, $year);
+        $email = "{$base}@" . self::EMAIL_DOMAIN;
 
         // Ensure uniqueness
         $i = 2;
         while (User::where('email', $email)->exists() || VoterRegistration::where('email', $email)->exists()) {
-            $email = "{$base}{$shortYear}.{$i}@" . self::EMAIL_DOMAIN;
+            $email = "{$base}.{$i}@" . self::EMAIL_DOMAIN;
             $i++;
         }
 
         return $email;
+    }
+
+    /**
+     * Whether $email matches the required firstname.lastname+YY@domain
+     * pattern derived from the voter's own name and enrolment year
+     * (optionally suffixed with .2, .3, ... for name/year collisions).
+     */
+    public static function emailMatchesPattern(string $name, int $year, string $email): bool
+    {
+        $base    = preg_quote(self::expectedEmailBase($name, $year), '/');
+        $domain  = preg_quote(self::EMAIL_DOMAIN, '/');
+        $pattern = "/^{$base}(\\.\\d+)?@{$domain}$/i";
+
+        return (bool) preg_match($pattern, trim($email));
     }
 }

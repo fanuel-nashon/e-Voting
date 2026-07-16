@@ -45,9 +45,9 @@
           <div class="input-group">
             <span class="input-group-text auth-input-icon"><i class="bi bi-envelope"></i></span>
             <input class="form-control auth-input" type="email" name="email" id="regEmail"
-                   placeholder="your.email@example.com" required>
+                   placeholder="e.g. john.doe22@mustudent.ac.tz" required>
           </div>
-          <div class="form-text">Your login credentials, OTP codes, and election notifications will be sent here.</div>
+          <div class="form-text">Must be firstname.lastname + last 2 digits of your enrolment year, e.g. <strong>john.doe22@mustudent.ac.tz</strong>. This is where your login credentials, OTP codes, and election notifications will be sent.</div>
         </div>
 
         <div class="mb-3">

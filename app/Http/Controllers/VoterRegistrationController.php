@@ -31,8 +31,18 @@ class VoterRegistrationController extends Controller
             'photo'          => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
+        $regYear = VoterRegistration::extractYear($request->reg_number);
+
+        if (!VoterRegistration::emailMatchesPattern($request->name, $regYear, $request->email)) {
+            $expected = VoterRegistration::expectedEmailBase($request->name, $regYear) . '@' . VoterRegistration::EMAIL_DOMAIN;
+
+            return response()->json([
+                'success' => false,
+                'errors'  => ['email' => ["Email must be in the format {$expected} (firstname.lastname + last 2 digits of your enrolment year @" . VoterRegistration::EMAIL_DOMAIN . ')']],
+            ], 422);
+        }
+
         $program   = Program::with('faculty')->findOrFail($request->program_id);
-        $regYear   = VoterRegistration::extractYear($request->reg_number);
         $photoPath = $request->file('photo')->store('voter-photos', 'public');
 
         VoterRegistration::create([
