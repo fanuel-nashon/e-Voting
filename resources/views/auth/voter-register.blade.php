@@ -20,7 +20,7 @@
         <h6 class="fw-bold text-dark mb-2">Registration Submitted!</h6>
         <p class="text-muted small mb-3">Your application is pending approval from your Faculty Election Admin. Once approved, your login credentials will be sent to the email below.</p>
         <div class="p-3 rounded-3 small" style="background:#f0f4ff;color:#091c3d;line-height:1.8;">
-          <div><strong>Your account email (system-generated):</strong></div>
+          <div><strong>Your account email:</strong></div>
           <div id="assignedEmail" class="fw-bold" style="color:#f5951b;"></div>
           <div class="mt-2 text-muted">This is also where your OTP codes and election notifications will be sent.</div>
         </div>
@@ -41,13 +41,23 @@
         </div>
 
         <div class="mb-3">
+          <label class="form-label fw-semibold text-dark small">Email Address</label>
+          <div class="input-group">
+            <span class="input-group-text auth-input-icon"><i class="bi bi-envelope"></i></span>
+            <input class="form-control auth-input" type="email" name="email" id="regEmail"
+                   placeholder="your.email@example.com" required>
+          </div>
+          <div class="form-text">Your login credentials, OTP codes, and election notifications will be sent here.</div>
+        </div>
+
+        <div class="mb-3">
           <label class="form-label fw-semibold text-dark small">Registration Number</label>
           <div class="input-group">
             <span class="input-group-text auth-input-icon"><i class="bi bi-hash"></i></span>
             <input class="form-control auth-input" type="text" name="reg_number" id="regNumber"
                    placeholder="e.g. MZ/ICT/2022/001" required>
           </div>
-          <div class="form-text">Must contain your enrolment year (e.g. 2022). Your account email will be generated automatically from your name and enrolment year.</div>
+          <div class="form-text">Must contain your enrolment year (e.g. 2022).</div>
         </div>
 
         <div class="mb-3">
@@ -170,7 +180,7 @@
     })
     .then(data => {
       if (data.success) {
-        document.getElementById('assignedEmail').textContent = data.login_email;
+        document.getElementById('assignedEmail').textContent = data.email;
         form.classList.add('d-none');
         document.getElementById('successState').classList.remove('d-none');
       }

@@ -25,6 +25,7 @@ class VoterRegistrationController extends Controller
     {
         $request->validate([
             'name'           => 'required|string|max:191',
+            'email'          => 'required|email|max:191|unique:voter_registrations,email|unique:users,email',
             'reg_number'     => 'required|string|max:50|unique:voter_registrations,reg_number|unique:students,reg_no',
             'program_id'     => 'required|exists:programs,id',
             'photo'          => 'required|image|mimes:jpg,jpeg,png|max:2048',
@@ -32,12 +33,11 @@ class VoterRegistrationController extends Controller
 
         $program   = Program::with('faculty')->findOrFail($request->program_id);
         $regYear   = VoterRegistration::extractYear($request->reg_number);
-        $loginEmail = VoterRegistration::buildEmail($request->name, $regYear);
         $photoPath = $request->file('photo')->store('voter-photos', 'public');
 
         VoterRegistration::create([
             'name'           => $request->name,
-            'email'          => $loginEmail,
+            'email'          => $request->email,
             'reg_number'     => strtoupper(trim($request->reg_number)),
             'reg_year'       => $regYear,
             'program_id'     => $program->id,
@@ -47,9 +47,9 @@ class VoterRegistrationController extends Controller
         ]);
 
         return response()->json([
-            'success'     => true,
-            'message'     => 'Registration submitted. Await approval from your Faculty Election Admin.',
-            'login_email' => $loginEmail,
+            'success' => true,
+            'message' => 'Registration submitted. Await approval from your Faculty Election Admin.',
+            'email'   => $request->email,
         ]);
     }
 
